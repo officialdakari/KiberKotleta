@@ -3,7 +3,8 @@
     "version": "1.7.0",
     "description": "Proxy for Minecraft to do some things like flying.",
     "main": "index.js",
-    "private": true,
+    "private": false,
+    "repository": "https://github.com/DarkCoder15/KiberKotleta",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node dist/index.js",
