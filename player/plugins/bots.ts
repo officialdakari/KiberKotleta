@@ -68,7 +68,7 @@ export default function botsPlugin(player: Player) {
         "unfight_bot",
         "Перестать драться",
         "<никнеймы|*>",
-        2,
+        1,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
@@ -133,6 +133,38 @@ export default function botsPlugin(player: Player) {
                         });
                     }
                     bot.equip(i, where as mineflayer.EquipmentDestination);
+                }
+            }
+
+        }
+    ));
+
+    player.commands.push(new Command(
+        "toss_bot",
+        "Выкинуть что-то",
+        "<никнеймы|*> <что> [в каком количестве]",
+        2,
+        async (player: Player, args: string[]) => {
+            var all = args[0] == '*';
+            var nicknames: string[] = args[0].split(',');
+            var what: string = args[1];
+            var countStr: string = args[2] ?? '0';
+            if (!/^\d+$/.test(countStr)) return player.sendMessage({
+                text: PREFIX + `${countStr} - это не число.`
+            });
+            var count = Number(countStr);
+
+            for (const bot of bots) {
+                if (all || nicknames.includes(bot.username)) {
+                    var items = bot.inventory.items().filter(x => x.name == what && x.count >= count);
+                    if (items.length == 0) {
+                        return player.sendMessage({
+                            text: PREFIX + `${bot.username} не нашёл эту вещь у себя в инвентаре.`
+                        });
+                    }
+                    for (const i of items) {
+                        await bot.tossStack(i);
+                    }
                 }
             }
 
