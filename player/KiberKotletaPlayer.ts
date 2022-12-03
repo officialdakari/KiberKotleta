@@ -7,6 +7,15 @@ import Module from "./Module";
 import getOptions, { Options } from "./Options";
 import { getPlugins, TextComponent, VERSION } from "../KiberKotleta";
 import PacketEvent from "./KiberKotletaPacketEvent";
+import MinecraftData from "minecraft-data";
+
+export class PlayerPosition {
+    x: number;
+    y: number;
+    z: number;
+    yaw: number;
+    pitch: number;
+}
 
 export class Player extends EventEmitter {
 
@@ -15,6 +24,9 @@ export class Player extends EventEmitter {
 
     host: string;
     port: number;
+    position: PlayerPosition;
+
+    mcData: MinecraftData.IndexedData;
 
     commands: Command[];
     modules: Module[];
@@ -23,6 +35,10 @@ export class Player extends EventEmitter {
 
     get username(): string {
         return this.sourceClient.username;
+    }
+
+    get version(): string {
+        return this.sourceClient.version;
     }
 
     teleport(x: number, y: number, z: number, yaw?: number, pitch?: number, flags?: number) {
@@ -41,6 +57,9 @@ export class Player extends EventEmitter {
 
     sendMessage(message: string | TextComponent | TextComponent[], prefix?: string) {
         if (typeof prefix !== "string") prefix = this.options.messagePrefix;
+        if (typeof message === "string") message = {
+            text: message
+        };
         this.sourceClient.write('system_chat', {
             content: JSON.stringify({ text: prefix, extra: [message] }),
             position: 1,
@@ -56,6 +75,8 @@ export class Player extends EventEmitter {
         super();
         this.sourceClient = sourceClient;
         this.targetClient = targetClient;
+
+        this.position = new PlayerPosition();
 
         this.options = getOptions(this.sourceClient.username);
 
@@ -76,7 +97,14 @@ export class Player extends EventEmitter {
                 this.sendMessage("§cНедостаточно параметров.");
                 return false;
             }
-            command.execute(this, args);
+            try {
+                command.execute(this, args);
+            } catch (error) {
+                console.error(error);
+                this.sendMessage({
+                    text: `\u00A7cПроизошла ошибка при выполнении команды.`
+                });
+            }
             return false;
         }
         return true;
@@ -94,9 +122,13 @@ export default function inject(client: ServerClient, host: string, port: number)
         loadInternalPlugins: false
     });
 
+
+
     console.log(`${client.username} подключился`);
 
     const player = new Player(client, target);
+
+    player.mcData = MinecraftData(client.version);
 
     player.host = host;
     player.port = port;
@@ -117,30 +149,51 @@ export default function inject(client: ServerClient, host: string, port: number)
     });
 
     client.on('packet', (data, { name, state }) => {
-        var packetEvent = new PacketEvent(name, state, data, 'client');
-        player.emit('packet', packetEvent);
-        for (const module of player.modules.filter(x => x.state)) {
-            module.emit('packet', packetEvent);
+        try {
+            var packetEvent = new PacketEvent(name, state, data, 'client');
+            player.emit('packet', packetEvent);
+            for (const module of player.modules.filter(x => x.state)) {
+                module.emit('packet', packetEvent);
+            }
+            if (packetEvent.cancel) return;
+            if (name == 'chat_message') {
+                if (!player.onChatMessage(data.message)) return;
+            }
+            if (['position', 'position_and_rotate', 'rotate'].includes(name)) {
+                player.position = Object.assign(player.position, data);
+            }
+            if (name.includes('tab')) {
+                console.log(name);
+                console.log(data);
+                console.log('from');
+            }
+            if (name == 'kick_disconnect') {
+                player.sendMessage(`Вас выгнали с сервера.`);
+                player.sendMessage(JSON.parse(data.reason));
+                return;
+            }
+            if (target._client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
+                target._client.write(name, data);
+        } catch (error) {
+            console.error(error);
+            player.sendMessage({
+                text: "Ошибка: " + error.stack
+            })
         }
-        if (packetEvent.cancel) return;
-        if (name == 'chat_message') {
-            if (!player.onChatMessage(data.message)) return;
-        }
-        if (name == 'kick_disconnect') {
-            player.sendMessage(`Вас выгнали с сервера.`);
-            player.sendMessage(JSON.parse(data.reason));
-            return;
-        }
-        if (target._client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
-            target._client.write(name, data);
     });
 
     target._client.on('packet', (data, { name, state }) => {
-        var packetEvent = new PacketEvent(name, state, data, 'server');
-        player.emit('packet', packetEvent);
-        if (packetEvent.cancel) return;
-        if (client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
-            client.write(name, data);
+        try {
+            var packetEvent = new PacketEvent(name, state, data, 'server');
+            player.emit('packet', packetEvent);
+            if (packetEvent.cancel) return;
+            if (client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
+                client.write(name, data);
+        } catch (error) {
+            console.error(error);
+            player.sendMessage({
+                text: "Ошибка: " + error.stack
+            })
+        }
     });
-
 }

@@ -16,31 +16,10 @@ export function getPlugins() {
 export default async function start() {
 
     console.log("KiberKotleta | Версия: " + VERSION);
-    console.log("#kiberkotleta #kiberkotleta-help at Cyclone IRC");
-    console.log("Cyclone IRC Web - https://darkcoder15.tk/irc/");
+    console.log("GitHub: https://github.com/DarkCoder15/KiberKotleta");
+    console.log("Gitter: https://gitter.im/DarkCoder15_/KiberKotleta");
     console.log("");
     console.log("Сайт - https://darkcoder15.tk/KiberKotleta/");
-
-    console.log("Загружаем плагины...");
-    for (const pluginDir of readdirSync("./plugins")) {
-        try {
-            var pluginPath = "./plugins/" + pluginDir;
-            var pkg = require(pluginPath + "/package.json");
-            console.log(`${pkg.name} v${pkg.version}`);
-            var module = require(pluginPath + "/" + pkg.main);
-            if (typeof module === "function") module();
-            else if (typeof module.default === "function") module.default();
-            else {
-                console.warn(`Плагин ${pluginDir} не экспортирует функцию старта`);
-            }
-            module.package = pkg;
-            plugins.push(module);
-        } catch (error) {
-            console.error(`Не удалось загрузить ${pluginDir}`);
-            console.error(error);
-        }
-    }
-    console.log(`Загружено ${plugins.length} плагинов`);
 
     var serverIP: string = getArgument("--server") ?? await text("Введите IP-адрес сервера");
     var serverPortStr: string = getArgument("--port") ?? await text("Введите порт сервера");
@@ -51,10 +30,12 @@ export default async function start() {
         "online-mode": false,
         enforceSecureProfile: false,
         version: "1.19",
-        maxPlayers: 1,
+        maxPlayers: 20,
         motd: "§6KiberKotleta §b§l" + VERSION,
         port: 25566
     });
+
+    console.log("КиберКотлета приготовилась. Заходите на сервер 127.0.0.1:25566");
 
     server.on('login', (client) => {
         inject(client, serverIP, serverPort);

@@ -8,7 +8,8 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node dist/index.js",
-        "build": "tsc -p ."
+        "build": "tsc -p .",
+        "build_start": "tsc -p . && node dist/index.js"
     },
     "author": "DarkCoder15",
     "license": "MIT",
@@ -19,6 +20,8 @@
         "minecraft-data": "^3.18.0",
         "minecraft-protocol": "^1.36.1",
         "mineflayer": "^4.5.1",
+        "mineflayer-pathfinder": "^2.4.1",
+        "mineflayer-pvp": "^1.3.2",
         "moment": "^2.29.4",
         "typescript": "^4.9.3",
         "uuid": "^9.0.0"
