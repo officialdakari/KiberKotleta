@@ -73,12 +73,6 @@ export default function botsPlugin(player: Player) {
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
             var who: string = args[1];
-            var p = player.targetClient.players[who];
-            if (!p.entity) {
-                return player.sendMessage({
-                    text: PREFIX + "Не вижу его"
-                });
-            }
 
 
             for (const bot of bots) {
@@ -99,16 +93,16 @@ export default function botsPlugin(player: Player) {
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
             var who: string = args[1];
-            var p = player.targetClient.players[who];
-            if (!p.entity) {
-                return player.sendMessage({
-                    text: PREFIX + "Не вижу его"
-                });
-            }
 
 
             for (const bot of bots) {
                 if (all || nicknames.includes(bot.username)) {
+                    var p = bot.players[who];
+                    if (!p.entity) {
+                        return player.sendMessage({
+                            text: PREFIX + `${bot.username} не видит его`
+                        });
+                    }
                     bot.pvp.attack(p.entity);
                 }
             }
@@ -124,7 +118,7 @@ export default function botsPlugin(player: Player) {
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
-            var who: string = args[1];
+            var what: string = args[1];
             var where: string = args[2] ?? 'hand';
             if (!['head', 'torso', 'legs', 'feet', 'hand', 'offhand'].includes(where)) return player.sendMessage({
                 text: PREFIX + `${where} это не место куда можно надеть вещь.`
@@ -132,7 +126,7 @@ export default function botsPlugin(player: Player) {
 
             for (const bot of bots) {
                 if (all || nicknames.includes(bot.username)) {
-                    var i = bot.inventory.items().find(x => x.name == where);
+                    var i = bot.inventory.items().find(x => x.name == what);
                     if (!i) {
                         return player.sendMessage({
                             text: PREFIX + `${bot.username} не нашёл эту вещь у себя в инвентаре.`
