@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "charset": "utf-8",
+        "target": "ES5",
+        "module": "commonjs",
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "outDir": "dist",
+        "sourceMap": true,
+        "declaration": true,
+        "declarationMap": true
+    },
+    "exclude": ["node_modules", "./node_modules", "./node_modules/*", "dist", "./dist", "./dist/*"],
+    "buildOptions": {}
+}

@@ -1,0 +1,43 @@
+import { existsSync, writeFileSync } from "fs";
+
+export class Options {
+    commandPrefix: string;
+    messagePrefix: string;
+
+    modules: any;
+
+    getModuleOptions(moduleName: string): any | never {
+        if (!this.modules[moduleName]) this.setModuleOptions(moduleName);
+        return this.modules[moduleName] ?? false;
+    }
+
+    setModuleOptions(moduleName: string, options?: any) {
+        this.modules[moduleName] = options ?? {};
+        this.save();
+    }
+
+    username: string;
+    get path() {
+        return `./options/${this.username}.json`;
+    }
+
+    save() {
+        writeFileSync(this.path, JSON.stringify(this));
+    }
+
+    constructor() {
+        this.commandPrefix = ".";
+        this.messagePrefix = "§8(§2К§cК§8) §r§7";
+        this.modules = {};
+    }
+}
+
+export default function getOptions(username: string): Options {
+    var optionsPath = `../options/${username}.json`;
+    var options: Options = new Options();
+    options.username = username;
+    if (existsSync(optionsPath)) options = Object.assign(options, require(optionsPath));
+    else options.save();
+
+    return options;
+}

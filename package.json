@@ -1,0 +1,25 @@
+{
+    "name": "kiberkotleta",
+    "version": "1.7.0",
+    "description": "Proxy for Minecraft to do some things like flying.",
+    "main": "index.js",
+    "private": true,
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node dist/index.js",
+        "build": "tsc -p ."
+    },
+    "author": "DarkCoder15",
+    "license": "MIT",
+    "dependencies": {
+        "colors": "^1.4.0",
+        "discord-rpc": "^4.0.1",
+        "input": "^1.0.1",
+        "minecraft-data": "^3.18.0",
+        "minecraft-protocol": "^1.36.1",
+        "mineflayer": "^4.5.1",
+        "moment": "^2.29.4",
+        "typescript": "^4.9.3",
+        "uuid": "^9.0.0"
+    }
+}
