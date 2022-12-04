@@ -9,13 +9,17 @@ import * as pvp from "mineflayer-pvp";
 var bots: mineflayer.Bot[] = [];
 
 export function getBots() {
-    return bots;
+    return bots;    
 }
 
 export const PREFIX: string = "\u00A78[\u00A77Bots\u00A78] \u00A7f";
 
 var bot_fishing = true;
-var bot_mining: string | never = "diamond_ore";
+var bot_mining: any = {};
+
+export function getBotMining(bot: any) {
+    return bot_mining[bot.username ?? bot];
+}
 
 export default function botsPlugin(player: Player) {
     player.commands.push(new Command(
@@ -191,6 +195,34 @@ export default function botsPlugin(player: Player) {
         }
     ));
 
+    player.commands.push(new Command(
+        "goto_bot",
+        "Привести ботов куда-то",
+        "<никнеймы|*> <x> <y> <z>",
+        4,
+        (player: Player, args: string[]) => {
+            var all = args[0] == '*';
+            var nicknames: string[] = args[0].split(',');
+            var coordsStr = args.slice(1);
+            if (coordsStr.find(x => !/^-?\d+/.test(x))) return player.sendMessage({
+                text: PREFIX + `${coordsStr.find(x => !/^-?\d+/.test(x))} - это не цифра.`
+            });
+
+            for (const bot of bots) {
+                if (all || nicknames.includes(bot.username)) {
+                    var pos = {
+                        x: Number(coordsStr[0]),
+                        y: Number(coordsStr[1]),
+                        z: Number(coordsStr[2])
+                    };
+                    bot.pathfinder.setMovements(new pathfinder.Movements(bot, MinecraftData(bot.version)));
+                    bot.pathfinder.setGoal(new pathfinder.goals.GoalNear(pos.x, pos.y, pos.z, 2));
+                }
+            }
+
+        }
+    ));
+
     async function fishLoop(bot: mineflayer.Bot) {
         try {
             await bot.fish();
@@ -207,7 +239,7 @@ export default function botsPlugin(player: Player) {
 
     async function mineLoop(bot: mineflayer.Bot) {
         const block = bot.findBlock({
-            matching: player.mcData.blocksByName[bot_mining].id,
+            matching: player.mcData.blocksByName[bot_mining[bot.username]].id,
             point: bot.entity.position,
             count: 1,
             maxDistance: 100
@@ -220,7 +252,7 @@ export default function botsPlugin(player: Player) {
         try {
             bot.pathfinder.setMovements(new pathfinder.Movements(bot, MinecraftData(bot.version)));
             await bot.pathfinder.goto(new pathfinder.goals.GoalNear(block.position.x, block.position.y, block.position.z, 3));
-            bot.equip(bot.pathfinder.bestHarvestTool(block), 'hand');
+            await bot.equip(bot.pathfinder.bestHarvestTool(block), 'hand');
             await bot.dig(block);
             await bot.pathfinder.goto(new pathfinder.goals.GoalNear(block.position.x, block.position.y, block.position.z, 0.01));
         } catch (error) {
@@ -229,7 +261,7 @@ export default function botsPlugin(player: Player) {
                 text: PREFIX + "Не удалось копать"
             });
         }
-        if (bot_mining) {
+        if (bot_mining[bot.username]) {
             mineLoop(bot);
         }
     }
@@ -263,10 +295,10 @@ export default function botsPlugin(player: Player) {
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
 
-            bot_mining = args[1];
 
             for (const bot of bots) {
                 if (all || nicknames.includes(bot.username)) {
+                    bot_mining[bot.username] = args[1];
                     mineLoop(bot);
                 }
             }
@@ -277,10 +309,17 @@ export default function botsPlugin(player: Player) {
     player.commands.push(new Command(
         "cancelmine_bot",
         "Отменить копание",
-        "",
-        0,
+        "<никнеймы|*>",
+        1,
         async (player: Player, args: string[]) => {
-            bot_mining = null;
+            var all = args[0] == '*';
+            var nicknames: string[] = args[0].split(',');
+
+            for (const bot of bots) {
+                if (all || nicknames.includes(bot.username)) {
+                    delete bot_mining[bot.username];
+                }
+            }
         }
     ));
 
@@ -368,25 +407,29 @@ export default function botsPlugin(player: Player) {
     player.commands.push(new Command(
         "info_bot",
         "Информация ботов",
-        "",
-        0,
+        "<никнеймы|*>",
+        1,
         (player: Player, args: string[]) => {
+            var all = args[0] == '*';
+            var nicknames: string[] = args[0].split(',');
             player.sendMessage({
                 text: PREFIX + `Информация ботов`
             });
             for (const bot of bots) {
-                player.sendMessage({
-                    text: PREFIX + `Начало ${bot.username}`
-                });
-                player.sendMessage({
-                    text: PREFIX + bot.inventory.items().map(x => `${x.name} x${x.count}`).join(', ')
-                });
-                player.sendMessage({
-                    text: PREFIX + `${bot.entity.position.x} ${bot.entity.position.y} ${bot.entity.position.z}`
-                });
-                player.sendMessage({
-                    text: PREFIX + `Конец ${bot.username}`
-                });
+                for (const bot of bots) {
+                    player.sendMessage({
+                        text: PREFIX + `Начало ${bot.username}`
+                    });
+                    player.sendMessage({
+                        text: PREFIX + bot.inventory.items().map(x => `${x.name} x${x.count}`).join(', ')
+                    });
+                    player.sendMessage({
+                        text: PREFIX + `${bot.entity.position.x} ${bot.entity.position.y} ${bot.entity.position.z}`
+                    });
+                    player.sendMessage({
+                        text: PREFIX + `Конец ${bot.username}`
+                    });
+                }
             }
         }
     ));
