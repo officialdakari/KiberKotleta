@@ -32,6 +32,7 @@ export class Player extends EventEmitter {
 
     commands: Command[];
     modules: Module[];
+    plugins: any[];
 
     options: Options;
 
@@ -64,13 +65,14 @@ export class Player extends EventEmitter {
         };
         this.sourceClient.write('system_chat', {
             content: JSON.stringify({ text: prefix, extra: [message] }),
-            position: 1,
+            position: 2,
             sender: '0'
         });
     }
 
     loadPlugin(plugin: Function) {
         plugin.bind(this)(this);
+        this.plugins.push(plugin);
     }
 
     constructor(sourceClient: ServerClient, targetClient: Bot) {
@@ -80,6 +82,7 @@ export class Player extends EventEmitter {
 
         this.position = new PlayerPosition();
         this.manualMovement = true;
+        this.plugins = [];
 
         this.options = getOptions(this.sourceClient.username);
 

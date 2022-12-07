@@ -11,8 +11,11 @@ export class Options {
         return this.modules[moduleName] ?? false;
     }
 
-    setModuleOptions(moduleName: string, options?: any) {
-        this.modules[moduleName] = options ?? {};
+    setModuleOptions(moduleName: string, options?: any, override?: boolean) {
+        if (override)
+            this.modules[moduleName] = options ?? {};
+        else
+            this.modules[moduleName] = Object.assign(this.modules[moduleName] ?? {}, options);
         this.save();
     }
 

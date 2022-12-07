@@ -16,6 +16,21 @@ export default function basicCommandsPlugin(player: Player) {
             }
         }
     ));
+
+    player.commands.push(new Command(
+        "plugins",
+        "Список плагинов",
+        "",
+        0,
+        () => {
+            player.sendMessage(`Всего ${player.plugins.length} плагинов`);
+            for (const pl of player.plugins) {
+                player.sendMessage(`${pl["name"]} ${pl["version"]} (licensed under ${pl["license"]})`);
+                if (typeof pl["description"] === 'string') player.sendMessage(pl["description"]);
+            }
+        }
+    ));
+
     player.commands.push(new Command(
         "modules",
         "Список модулей",

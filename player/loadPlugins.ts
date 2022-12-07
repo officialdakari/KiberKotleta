@@ -59,5 +59,38 @@ export default function loadPlugins(player: Player, client: ServerClient, target
             console.error(`Не удалось загрузить плагин: ${pluginPath}`);
         }
     }
+    
+    for (const pluginName of readdirSync(path.join(".", "plugins"))) {
+        const pluginPath = path.join(__dirname, "..", "plugins", pluginName);
+        if (pluginPath.endsWith(".js")) {
+            console.log("Loading: " + pluginPath);
+            const plugin = require(pluginPath);
+            plugin.pluginInfo = {
+                name: plugin.name ?? pluginPath,
+                version: plugin.version ?? "1.0.0",
+                description: plugin.description ?? "None",
+                license: plugin.license ?? "None"
+            };
+            if (typeof plugin == "function") {
+                player.loadPlugin(plugin);
+            } else if (typeof plugin["default"] == "function") {
+                player.loadPlugin(plugin["default"]);
+            }
+            continue;
+        }
+        try {
+            const packageJson = require(path.join(pluginPath, 'package.json'));
+            const plugin = require(path.join(pluginPath, packageJson.main));
+            plugin.pluginInfo = packageJson;
+            if (typeof plugin == "function") {
+                player.loadPlugin(plugin);
+            } else if (typeof plugin["default"] == "function") {
+                player.loadPlugin(plugin["default"]);
+            }
+        } catch (error) {
+            console.error("Can't load plugin " + pluginPath);
+            console.error(error);
+        }
+    }
 
 }
