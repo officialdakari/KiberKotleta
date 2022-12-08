@@ -107,6 +107,7 @@ export default function botsPlugin(player: Player) {
                             text: PREFIX + `${bot.username} не видит его`
                         });
                     }
+                    bot.pvp.attackRange = 3;
                     bot.pvp.attack(p.entity);
                 }
             }

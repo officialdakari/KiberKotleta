@@ -2,7 +2,7 @@ import { VERSION } from "../../KiberKotleta";
 import Command from "../Command";
 import fetch from "node-fetch";
 import { Player } from "../KiberKotletaPlayer";
-import { writeFileSync } from "fs";
+import { writeFileSync, existsSync } from "fs";
 
 export const PREFIX = "\u00A78[\u00A77Catalog\u00A78] \u00a7f";
 
@@ -59,12 +59,18 @@ export default function catalogPlugin(player: Player) {
                 );
                 const f = await fetch(plugin.url);
                 const res: string = await f.text();
+                const path = `./plugins/${plugin.name}.js`;
                 if (!f.ok) return player.sendMessage(
                     {
                         text: PREFIX + `Ошибка загрузки (${f.status})`
                     }
                 );
-                writeFileSync(`./plugins/${plugin.name}.js`, res);
+                if (existsSync(path)) return player.sendMessage(
+                    {
+                        text: PREFIX + `Файл уже существует`
+                    }
+                );
+                writeFileSync(path, res);
                 player.sendMessage(
                     {
                         text: PREFIX + "Плагин установлен."
