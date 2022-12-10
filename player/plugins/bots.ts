@@ -417,7 +417,7 @@ export default function botsPlugin(player: Player) {
                 text: PREFIX + `Информация ботов`
             });
             for (const bot of bots) {
-                for (const bot of bots) {
+                if (all || nicknames.includes(bot.username)) {
                     player.sendMessage({
                         text: PREFIX + `Начало ${bot.username}`
                     });
