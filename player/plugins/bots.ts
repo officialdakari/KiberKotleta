@@ -419,16 +419,13 @@ export default function botsPlugin(player: Player) {
             for (const bot of bots) {
                 if (all || nicknames.includes(bot.username)) {
                     player.sendMessage({
-                        text: PREFIX + `Начало ${bot.username}`
+                        text: PREFIX + `Бот: ${bot.username}`
                     });
                     player.sendMessage({
-                        text: PREFIX + bot.inventory.items().map(x => `${x.name} x${x.count}`).join(', ')
+                        text: PREFIX + "Инвентарь: " + bot.inventory.items().map(x => `${x.name} x${x.count}`).join(', ')
                     });
                     player.sendMessage({
-                        text: PREFIX + `${bot.entity.position.x} ${bot.entity.position.y} ${bot.entity.position.z}`
-                    });
-                    player.sendMessage({
-                        text: PREFIX + `Конец ${bot.username}`
+                        text: PREFIX + `Координаты: ${bot.entity.position.x} ${bot.entity.position.y} ${bot.entity.position.z}`
                     });
                 }
             }

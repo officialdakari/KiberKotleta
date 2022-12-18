@@ -146,4 +146,5 @@ export default function modulesPlugin(player: Player) {
     player.modules.push(speedboost);
     player.modules.push(rabbit);
     player.modules.push(autofish);
+    player.modules.push(nightvision);
 }
