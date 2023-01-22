@@ -199,6 +199,9 @@ export default function inject(client: ServerClient, host: string, port: number)
         try {
             var packetEvent = new PacketEvent(name, state, data, 'server');
             player.emit('packet', packetEvent);
+            for (const module of player.modules.filter(x => x.state)) {
+                module.emit('packet', packetEvent);
+            }
             if (packetEvent.cancel) return;
             if (client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
                 client.write(name, data);

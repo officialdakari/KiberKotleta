@@ -40,7 +40,7 @@ export default function basicCommandsPlugin(player: Player) {
             player.sendMessage(`KiberKotleta ${VERSION} by DarkCoder15`);
             player.sendMessage(`Всего ${player.modules.length} модулей`);
             for (const module of player.modules) {
-                player.sendMessage(`${module.name} => ${module.description} [${module.state ? '§aВкл' : '§cВыкл'}§7]`);
+                player.sendMessage(`${module.name} => ${module.description} §7[${module.state ? '§aВкл' : '§cВыкл'}§7]`);
             }
         }
     ));
@@ -54,10 +54,10 @@ export default function basicCommandsPlugin(player: Player) {
             var module = player.modules.find(x => x.name == args[0]);
             if (!module) return player.sendMessage("Модуль не найден");
             if (module.state) {
-                player.sendMessage(`[§cВыкл§7] ${module.name}`);
+                player.sendMessage(`§7[§cВыкл§7] ${module.name}`);
                 module.disable();
             } else {
-                player.sendMessage(`[§aВкл§7] ${module.name}`);
+                player.sendMessage(`§7[§aВкл§7] ${module.name}`);
                 module.enable();
             }
         }
