@@ -1,4 +1,4 @@
-# KiberKotleta
+# КиберКотлета
 [![Gitter](https://badges.gitter.im/DarkCoder15_/KiberKotleta.svg)](https://gitter.im/DarkCoder15_/KiberKotleta?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 [Chat via Matrix](https://matrix.to/#/#kiberkotleta:m.darkcoder15.tk)
