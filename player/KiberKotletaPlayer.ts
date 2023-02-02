@@ -65,8 +65,7 @@ export class Player extends EventEmitter {
         };
         this.sourceClient.write('system_chat', {
             content: JSON.stringify({ text: prefix, extra: [message] }),
-            position: 2,
-            sender: '0'
+            type: 1
         });
     }
 

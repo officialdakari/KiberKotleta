@@ -3,82 +3,7 @@ import Command from "../Command";
 import PacketEvent from "../KiberKotletaPacketEvent";
 import { Player } from "../KiberKotletaPlayer";
 import moment from "moment";
-
-function editTextComponent(c, source, target) {
-    if (c.text) c.text = c.text.replace(source, target);
-    let extra = [];
-    if (c.extra) {
-        for (let i = 0; i < c.extra.length; i++) {
-            let extraValue = c.extra[i];
-            extra.push(editTextComponent(extraValue, source, target));
-        }
-        c.extra = extra;
-    }
-    return c;
-}
-
-const cache = {};
-async function translateTextComponent(c, source, target, playerList) {
-    if (!c.text && c.extra) {
-        let ext = [];
-        for (const extra of c.extra) {
-            ext.push(await translateTextComponent(extra, source, target, playerList));
-        }
-        return { text: '', extra: ext };
-    }
-    if (!c.text && !c.extra) {
-        return { text: '' };
-    }
-    if (c.text.replaceAll(" ", "").length < 1) return c;
-    if (playerList.includes(c.text)) return c;
-    //if (/^\/[0-9\|\\\/\-\=\+\[\]\{\}\"\'\;\:\,\.]+$/.test(c.text)) return c;
-    const fetch = require('node-fetch');
-    const data = JSON.stringify({
-        q: c.text,
-        source,
-        target
-    });
-    try {
-        try {
-            if (cache[c.text]) {
-                c.text = cache[c.text];
-            } else {
-                let resp = await fetch("https://translate.argosopentech.com/translate", {
-                    method: "POST",
-                    body: data,
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-                let ctn = await resp.json();
-                cache[c.text] = ctn.translatedText;
-                c.text = ctn.translatedText;
-            }
-        } catch (err) {
-            console.error(err);
-        }
-        let extra = [];
-        if (c.extra) {
-            if (c.extra.length == 0) delete c.extra;
-            else {
-                for (let i = 0; i < c.extra.length; i++) {
-                    let extraValue = c.extra[i];
-                    extra.push(await translateTextComponent(extraValue, source, target, playerList));
-                }
-                c.extra = extra;
-            }
-        } //else delete c.extra;
-        var d = {};
-        d['text'] = c.text ?? "";
-        if (c.selector) d['selector'] = c.selector;
-        if (c.color) d['color'] = c.color;
-        if (c.extra) d['extra'] = c.extra;
-        return d;
-    } catch (err) {
-        console.error(err);
-    }
-    return { text: "Translation Error" };
-}
+import { translateTextComponent } from "../../util/textComponent";
 
 export default function chatPlugin(player: Player) {
 
@@ -103,25 +28,43 @@ export default function chatPlugin(player: Player) {
         to: 'ru'
     };
 
-    translateChatModule.on('packet', (packet: PacketEvent) => {
-
+    translateChatModule.on('packet', async (packet: PacketEvent) => {
+        if (packet.name == 'chat_message') {
+            console.log(JSON.stringify(packet));
+        }
         if (packet.source == 'server' &&
             ['chat_message', 'system_chat'].includes(packet.name) &&
             [1, 0, 7].includes(packet.data.type)) {
             var tc = JSON.parse(packet.data.content);
-            console.log(`Original: ${packet.data.content}`);
-            translateTextComponent(tc, translatorSettings.from, translatorSettings.to, Object.keys(player.targetClient.players)).then((data) => {
-                if (!data) return;
-                if (data.extra && data.extra.length == 0) delete data.extra;
-                packet.data.content = JSON.stringify(data);
-                console.log(`Translated: ${packet.data.content}`);
-                player.sourceClient.write(packet.name, packet.data);
-            }).catch(err => {
-                console.error(err);
+            console.log(`Original: ${JSON.stringify(packet)}`);
+            const data = await translateTextComponent(tc, translatorSettings.from, translatorSettings.to, []);
+            // EN:all text values become empty after translation here, but perfectly translated in test
+            // RU:весь текст отваливается после перевода, но нормально переводит при тестировании
+            if (!data) return;
+
+            console.log(`Translated: ${JSON.stringify(data)}`);
+            player.sourceClient.write('system_chat', {
+                sender: packet.data.sender ?? '0',
+                type: packet.data.type ?? 1,
+                content: JSON.stringify(data)
             });
             packet.cancel = true;
         }
     });
+
+    player.commands.push(
+        new Command(
+            "translate_test",
+            "Проверка переводчика в рантайме",
+            "",
+            0,
+            async () => {
+                await player.sendMessage(await translateTextComponent({
+                    text: "Hello. If you see this text and it is in Russian, module should work fine."
+                }, "en", "ru", []));
+            }
+        )
+    );
 
     player.modules.push(timeChatModule);
     player.modules.push(translateChatModule);
