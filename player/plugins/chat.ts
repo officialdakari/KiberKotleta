@@ -7,9 +7,9 @@ import { translateTextComponent } from "../../util/textComponent";
 
 export default function chatPlugin(player: Player) {
 
-    var timeChatModule = new Module("TimeChat", "Время около сообщений в чате", player);
+    var TimestampsModule = new Module("Timestamps", player.translate('module_Timestamps'), player);
 
-    timeChatModule.on('packet', (packet: PacketEvent) => {
+    TimestampsModule.on('packet', (packet: PacketEvent) => {
         if (packet.source == 'server' &&
             ['chat_message', 'system_chat'].includes(packet.name) &&
             [1, 0, 7, 3, 4, 5].includes(packet.data.type)) {
@@ -22,17 +22,15 @@ export default function chatPlugin(player: Player) {
         }
     });
 
-    var translateChatModule = new Module("Translate", "Перевод сообщений в чате", player);
+    var translateChatModule = new Module("Translate", player.translate('module_Translate'), player);
     if (!player.options.hasModule('Translate')) {
         player.options.setModuleOptions('Translate', {
             from: 'auto',
-            to: 'ru'
+            to: 'ru',
+            lingva_host: 'https://translate.jae.fi'
         });
     }
-    var translatorSettings = player.options.getModuleOptions("Translate") ?? {
-        from: 'auto',
-        to: 'ru'
-    };
+    var translatorSettings = player.options.getModuleOptions("Translate");
 
     translateChatModule.on('packet', (packet: PacketEvent) => {
         if (packet.name == 'chat_message') {
@@ -44,7 +42,7 @@ export default function chatPlugin(player: Player) {
             var tc = JSON.parse(packet.data.content);
             console.log(`Original: ${JSON.stringify(packet)}`);
             packet.cancel = true;
-            translateTextComponent(tc, translatorSettings.from, translatorSettings.to, Object.keys(player.targetClient.players)).then(data => {
+            translateTextComponent(tc, translatorSettings.from, translatorSettings.to, Object.keys(player.targetClient.players), translatorSettings.lingva_host).then(data => {
                 console.log(`Translated: ${JSON.stringify(data)}`);
                 player.sourceClient.write('system_chat', {
                     sender: packet.data.sender ?? '0',
@@ -55,21 +53,7 @@ export default function chatPlugin(player: Player) {
         }
     });
 
-    player.commands.push(
-        new Command(
-            "translate_test",
-            "Проверка переводчика в рантайме",
-            "",
-            0,
-            async () => {
-                await player.sendMessage(await translateTextComponent({
-                    text: "Hello. If you see this text and it is in Russian, module should work fine."
-                }, "en", "ru", []));
-            }
-        )
-    );
-
-    player.modules.push(timeChatModule);
+    player.modules.push(TimestampsModule);
     player.modules.push(translateChatModule);
 
 }

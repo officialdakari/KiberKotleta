@@ -8,8 +8,8 @@ export default function helpPlugin(player: Player) {
     var spammed: number = 0;
     player.commands.push(new Command(
         "spam",
-        "Спам сообщениями",
-        "<количество> <задержка, с> <сообщение>",
+        player.translate('cmd_spam_desc'),
+        player.translate('cmd_spam_usage'),
         3,
         (player: Player, args: string[]) => {
             spammed = 0;
@@ -19,25 +19,20 @@ export default function helpPlugin(player: Player) {
             i = setInterval(() => {
                 spammed++;
                 if (spammed >= count) {
-                    player.sendMessage("Спам завершён");
                     return clearInterval(i);
                 }
                 player.targetClient.chat(message.replace(/%random%/g, uuid.v4().replace(/\-/g, '')));
             }, interval * 1e3);
-            player.sendMessage("Спам начат");
         }
     ));
     player.commands.push(new Command(
         "cancelspam",
-        "Отменить спам",
+        player.translate('cmd_cancelspam_desc'),
         "",
         0,
         (player: Player, args: string[]) => {
             if (i) {
                 clearInterval(i);
-                player.sendMessage("Спам отменён");
-            } else {
-                player.sendMessage("Спам ещё не начинался.");
             }
         }
     ));

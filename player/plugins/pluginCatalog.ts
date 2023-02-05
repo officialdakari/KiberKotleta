@@ -11,7 +11,7 @@ export default function catalogPlugin(player: Player) {
     player.commands.push(
         new Command(
             "catalog",
-            "Каталог плагинов",
+            player.translate('cmd_catalog_desc'),
             "",
             0,
             async () => {
@@ -20,7 +20,7 @@ export default function catalogPlugin(player: Player) {
                 cachedList = res;
                 player.sendMessage(
                     {
-                        text: PREFIX + `${res.length} плагинов доступно`
+                        text: PREFIX + player.translate('cmd_catalog_count', res.length)
                     }
                 );
                 for (const plugin of res) {
@@ -31,7 +31,7 @@ export default function catalogPlugin(player: Player) {
                     );
                     player.sendMessage(
                         {
-                            text: PREFIX + `Установка - ${player.options.commandPrefix}install ${plugin.name}`
+                            text: PREFIX + player.translate('cmd_catalog_install', `${player.options.commandPrefix}install ${plugin.name}`)
                         }
                     );
                 }
@@ -42,8 +42,8 @@ export default function catalogPlugin(player: Player) {
     player.commands.push(
         new Command(
             "install",
-            "Установка плагина",
-            "<название плагина>",
+            player.translate('cmd_install_desc'),
+            player.translate('cmd_install_usage'),
             1,
             async ({ }, args: string[]) => {
                 if (!cachedList) {
@@ -54,7 +54,7 @@ export default function catalogPlugin(player: Player) {
                 var plugin = cachedList.find(x => x.name == args[0]);
                 if (!plugin) return player.sendMessage(
                     {
-                        text: PREFIX + "Не найдено!"
+                        text: PREFIX + player.translate('err_not_found')
                     }
                 );
                 const f = await fetch(plugin.url);
@@ -62,18 +62,18 @@ export default function catalogPlugin(player: Player) {
                 const path = `./plugins/${plugin.name}.js`;
                 if (!f.ok) return player.sendMessage(
                     {
-                        text: PREFIX + `Ошибка загрузки (${f.status})`
+                        text: PREFIX + player.translate('cmd_install_status_code', `${f.status} ${f.statusText}`)
                     }
                 );
                 if (existsSync(path)) return player.sendMessage(
                     {
-                        text: PREFIX + `Файл уже существует`
+                        text: PREFIX + player.translate('cmd_install_exists')
                     }
                 );
                 writeFileSync(path, res);
                 player.sendMessage(
                     {
-                        text: PREFIX + "Плагин установлен."
+                        text: PREFIX + player.translate('cmd_install_success')
                     }
                 );
                 const p = require(`${__dirname}/../../plugins/${plugin.name}.js`);

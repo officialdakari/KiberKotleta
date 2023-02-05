@@ -12,13 +12,12 @@ export default function modulesPlugin(player: Player) {
 
     var flight = new Module(
         "Flight",
-        "Ты должен влететь в окошко как пушинка.",
+        player.translate('module_Flight'),
         player
     );
 
     flight.on('enabled', () => {
         if (!lastAbilitiesPacket) {
-            flight.sendMessage("Пакет abilities ещё не был получен, летать пока нельзя.");
             return flight.disable();
         }
         var packet = JSON.parse(JSON.stringify(lastAbilitiesPacket));
@@ -30,7 +29,6 @@ export default function modulesPlugin(player: Player) {
 
     flight.on('disabled', () => {
         if (!lastAbilitiesPacket) {
-            flight.sendMessage("Пакет abilities ещё не был получен, летать пока нельзя.");
             return flight.disable();
         }
         player.sourceClient.write('abilities', lastAbilitiesPacket);
@@ -49,13 +47,12 @@ export default function modulesPlugin(player: Player) {
 
     var speedboost = new Module(
         "SpeedBoost",
-        "Ускорение.",
+        player.translate('module_SpeedBoost'),
         player
     );
 
     speedboost.on('enabled', () => {
         if (!lastAbilitiesPacket) {
-            speedboost.sendMessage("Пакет abilities ещё не был получен, нельзя пока.");
             return speedboost.disable();
         }
         var packet = JSON.parse(JSON.stringify(lastAbilitiesPacket));
@@ -66,7 +63,6 @@ export default function modulesPlugin(player: Player) {
 
     speedboost.on('disabled', () => {
         if (!lastAbilitiesPacket) {
-            speedboost.sendMessage("Пакет abilities ещё не был получен, летать пока нельзя.");
             return speedboost.disable();
         }
         lastAbilitiesPacket.flyingSpeed = DEFAULT_FLYING_SPEED;
@@ -89,7 +85,7 @@ export default function modulesPlugin(player: Player) {
         }
     });
 
-    var rabbit = new Module("Rabbit", "Выше прыгать.", player);
+    var rabbit = new Module("Rabbit", player.translate('module_Rabbit'), player);
 
     rabbit.on('enabled', () => {
         player.sourceClient.write('entity_effect', {
@@ -108,7 +104,7 @@ export default function modulesPlugin(player: Player) {
         });
     });
 
-    var nightvision = new Module("NightVision", "Ночное зрение.", player);
+    var nightvision = new Module("NightVision", player.translate('module_NightVision'), player);
 
     nightvision.on('enabled', () => {
         player.sourceClient.write('entity_effect', {
@@ -127,7 +123,7 @@ export default function modulesPlugin(player: Player) {
         });
     });
 
-    var autofish = new Module("AutoFish", "Автоматическая рыбалка.", player);
+    var autofish = new Module("AutoFish", player.translate('module_AutoFish'), player);
 
     autofish.on('enabled', () => {
         function fish(target: Bot) {

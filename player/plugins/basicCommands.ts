@@ -5,7 +5,7 @@ import { Player } from "../KiberKotletaPlayer";
 export default function basicCommandsPlugin(player: Player) {
     player.commands.push(new Command(
         "help",
-        "Список команд",
+        player.translate('cmd_help_desc'),
         "",
         0,
         () => {
@@ -62,7 +62,7 @@ export default function basicCommandsPlugin(player: Player) {
                 var v = JSON.parse(args.slice(2).join(' '));
                 module[args[1]] = v;
                 player.options.save();
-                player.sendMessage(player.translate('cmd_conf_param_updated'));
+                player.sendMessage(player.translate('cmd_conf_param_update'));
             }
         }
     ));
@@ -82,6 +82,18 @@ export default function basicCommandsPlugin(player: Player) {
                 player.sendMessage(player.translate('generic_module_state', player.translate('generic_on'), module.name));
                 module.enable();
             }
+        }
+    ));
+
+    player.commands.push(new Command(
+        "locale",
+        player.translate('cmd_locale_desc'),
+        player.translate('cmd_locale_usage'),
+        1,
+        (p, args) => {
+            player.options.locale = args[0];
+            player.options.save();
+            player.sendMessage(player.translate('cmd_locale_changed', args[0]));
         }
     ));
 }

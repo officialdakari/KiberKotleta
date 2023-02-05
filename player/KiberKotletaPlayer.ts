@@ -95,11 +95,11 @@ export class Player extends EventEmitter {
             var cmd = args.shift()?.slice(this.options.commandPrefix.length);
             var command = this.commands.find(command => command.name.toLowerCase() == cmd?.toLowerCase());
             if (!command) {
-                this.sendMessage("§cНеизвестная команда.");
+                this.sendMessage(this.translate('err_no_such_command'));
                 return false;
             }
             if (args.length < command.minArgsCount) {
-                this.sendMessage("§cНедостаточно параметров.");
+                this.sendMessage(this.translate("err_usage", command.name + command.usage));
                 return false;
             }
             try {
@@ -107,7 +107,7 @@ export class Player extends EventEmitter {
             } catch (error) {
                 console.error(error);
                 this.sendMessage({
-                    text: `\u00A7cПроизошла ошибка при выполнении команды.`
+                    text: this.translate('err_command')
                 });
             }
             return false;
@@ -145,7 +145,7 @@ export default function inject(client: ServerClient, host: string, port: number)
 
 
 
-    console.log(`${client.username} подключился`);
+    console.log(`${client.username} joined`);
 
     const player = new Player(client, target);
 
@@ -174,7 +174,7 @@ export default function inject(client: ServerClient, host: string, port: number)
     });
 
     client.on('error', () => {
-        player.sendMessage(`Соединение потеряно.`);
+        player.sendMessage(player.translate('generic_connection_lost'));
     });
 
     client.on('packet', (data, { name, state }) => {
@@ -196,7 +196,7 @@ export default function inject(client: ServerClient, host: string, port: number)
                 player.targetClient.entity.position.z = player.position.z;
             }
             if (name == 'kick_disconnect') {
-                player.sendMessage(`Вас выгнали с сервера.`);
+                player.sendMessage(player.translate('generic_kicked'));
                 player.sendMessage(JSON.parse(data.reason));
                 return;
             }
@@ -205,7 +205,7 @@ export default function inject(client: ServerClient, host: string, port: number)
         } catch (error) {
             console.error(error);
             player.sendMessage({
-                text: "Ошибка: " + error.stack
+                text: player.translate('generic_error', error.stack)
             })
         }
     });
@@ -223,7 +223,7 @@ export default function inject(client: ServerClient, host: string, port: number)
         } catch (error) {
             console.error(error);
             player.sendMessage({
-                text: "Ошибка: " + error.stack
+                text: player.translate('generic_error', error.stack)
             })
         }
     });

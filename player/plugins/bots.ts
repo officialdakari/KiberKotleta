@@ -146,8 +146,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "toss_bot",
-        "Выкинуть что-то",
-        "<никнеймы|*> <что> [в каком количестве]",
+        player.translate('cmd_toss_bot_desc'),
+        player.translate('cmd_toss_bot_usage'),
         2,
         async (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -289,8 +289,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "mine_bot",
-        "Копать",
-        "<никнеймы|*> <ID блока>",
+        player.translate('cmd_mine_bot_desc'),
+        player.translate('cmd_mine_bot_usage'),
         2,
         async (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -309,8 +309,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "cancelmine_bot",
-        "Отменить копание",
-        "<никнеймы|*>",
+        player.translate('cmd_cancelmine_bot_desc'),
+        player.translate('cmd_cancelmine_bot_usage'),
         1,
         async (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -326,7 +326,7 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "cancelfish_bot",
-        "Отменить рыбалку",
+        player.translate('cmd_cancelfish_bot_desc'),
         "",
         0,
         async (player: Player, args: string[]) => {
@@ -336,8 +336,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "chat_bot",
-        "Написать в чат от имени ботов",
-        "<никнеймы|*> <сообщение...>",
+        player.translate('cmd_chat_bot_desc'),
+        player.translate('cmd_chat_bot_usage'),
         2,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -355,8 +355,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "eval_bot",
-        "Исполнить код на каждого бота",
-        "<никнеймы|*> <код...>",
+        player.translate('cmd_eval_bot_desc'),
+        player.translate('cmd_eval_bot_usage'),
         2,
         async (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -374,8 +374,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "disconnect_bot",
-        "Отключить ботов",
-        "<никнеймы|*>",
+        player.translate('cmd_disconnect_bot_desc'),
+        player.translate('cmd_disconnect_bot_usage'),
         1,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -393,13 +393,13 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "list_bot",
-        "Список ботов",
+        player.translate('cmd_list_bot_desc'),
         "",
         0,
         (player: Player, args: string[]) => {
             player.sendMessage(
                 {
-                    text: PREFIX + `${bots.length} ботов на сервере: ${bots.map(x => x.username).join(', ')}`
+                    text: PREFIX + player.translate('cmd_list_bot_msg', bots.length, bots.map(x => x.username).join(', '))
                 }
             );
         }
@@ -407,25 +407,31 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "info_bot",
-        "Информация ботов",
-        "<никнеймы|*>",
+        player.translate('cmd_info_bot_desc'),
+        player.translate('cmd_info_bot_usage'),
         1,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
             player.sendMessage({
-                text: PREFIX + `Информация ботов`
+                text: PREFIX + player.translate('cmd_info_bot_start')
             });
             for (const bot of bots) {
                 if (all || nicknames.includes(bot.username)) {
                     player.sendMessage({
-                        text: PREFIX + `Бот: ${bot.username}`
+                        text: PREFIX + player.translate('cmd_info_bot_bot_info', bot.username)
                     });
                     player.sendMessage({
-                        text: PREFIX + "Инвентарь: " + bot.inventory.items().map(x => `${x.name} x${x.count}`).join(', ')
+                        text: PREFIX + player.translate('cmd_info_bot_inventory', bot.inventory.items().map(x => `${x.name} x${x.count}`).join(', '))
                     });
                     player.sendMessage({
-                        text: PREFIX + `Координаты: ${bot.entity.position.x} ${bot.entity.position.y} ${bot.entity.position.z}`
+                        text: PREFIX + player.translate('cmd_info_bot_position', bot.entity.position.x, bot.entity.position.y, bot.entity.position.z)
+                    });
+                    player.sendMessage({
+                        text: PREFIX + player.translate('cmd_info_bot_health', bot.health)
+                    });
+                    player.sendMessage({
+                        text: PREFIX + player.translate('cmd_info_bot_food_level', bot.food)
                     });
                 }
             }
