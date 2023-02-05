@@ -8,7 +8,7 @@ export class Options {
 
     getModuleOptions(moduleName: string): any | never {
         if (!this.modules[moduleName]) this.setModuleOptions(moduleName);
-        return this.modules[moduleName] ?? false;
+        return this.modules[moduleName];
     }
 
     setModuleOptions(moduleName: string, options?: any, override?: boolean) {
@@ -19,7 +19,13 @@ export class Options {
         this.save();
     }
 
+    hasModule(moduleName: string) {
+        if (this.modules[moduleName]) return true;
+        return false;
+    }
+
     username: string;
+    locale: string;
     get path() {
         return `./options/${this.username}.json`;
     }
@@ -30,6 +36,7 @@ export class Options {
 
     constructor() {
         this.commandPrefix = ".";
+        this.locale = "en_US";
         this.messagePrefix = "§8(§2К§cК§8) §r§7";
         this.modules = {};
     }

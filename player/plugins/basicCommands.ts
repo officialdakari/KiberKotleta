@@ -9,8 +9,9 @@ export default function basicCommandsPlugin(player: Player) {
         "",
         0,
         () => {
-            player.sendMessage(`KiberKotleta ${VERSION} by DarkCoder15`);
-            player.sendMessage(`Всего ${player.commands.length} команд`);
+            player.sendMessage(player.translate('kiberkotleta_version_author', VERSION));
+            player.sendMessage(player.translate('help_parameter_guide'));
+            player.sendMessage(player.translate('help_commands_count'));
             for (const command of player.commands) {
                 player.sendMessage(`${command.name}${command.usage.length > 0 ? " " + command.usage : ""} => ${command.description}`);
             }
@@ -19,11 +20,11 @@ export default function basicCommandsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "plugins",
-        "Список плагинов",
+        player.translate('cmd_plugins_desc'),
         "",
         0,
         () => {
-            player.sendMessage(`Всего ${player.plugins.length} плагинов`);
+            player.sendMessage(player.translate('cmd_plugins_count', player.plugins.length));
             for (const pl of player.plugins) {
                 player.sendMessage(`${pl["name"]} ${pl["version"]} (licensed under ${pl["license"]})`);
                 if (typeof pl["description"] === 'string') player.sendMessage(pl["description"]);
@@ -33,31 +34,52 @@ export default function basicCommandsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "modules",
-        "Список модулей",
+        player.translate('cmd_modules_desc'),
         "",
         0,
         () => {
-            player.sendMessage(`KiberKotleta ${VERSION} by DarkCoder15`);
-            player.sendMessage(`Всего ${player.modules.length} модулей`);
+            player.sendMessage(player.translate('kiberkotleta_version_author', VERSION));
+            player.sendMessage(player.translate('cmd_modules_count', player.modules.length));
             for (const module of player.modules) {
-                player.sendMessage(`${module.name} => ${module.description} §7[${module.state ? '§aВкл' : '§cВыкл'}§7]`);
+                player.sendMessage(`${module.name} => ${module.description} §7[${module.state ? player.translate('generic_on') : player.translate('generic_off')}§7]`);
+            }
+        }
+    ));
+
+    player.commands.push(new Command(
+        "conf",
+        player.translate('cmd_conf_desc'),
+        player.translate('cmd_conf_usage'),
+        1,
+        (p, args: string[]) => {
+            var module = player.options.getModuleOptions(args[0]);
+            if (args.length == 1) {
+                var k = Object.keys(module);
+                player.sendMessage(player.translate('cmd_conf_params_list', k.length, k.join(', ')));
+            } else if (args.length == 2) {
+                player.sendMessage(player.translate('cmd_conf_param_value', args[1], JSON.stringify(module[args[1]])));
+            } else {
+                var v = JSON.parse(args.slice(2).join(' '));
+                module[args[1]] = v;
+                player.options.save();
+                player.sendMessage(player.translate('cmd_conf_param_updated'));
             }
         }
     ));
 
     player.commands.push(new Command(
         "t",
-        "Включить/отключить модуль",
-        "<название модуля>",
+        player.translate('cmd_t_desc'),
+        player.translate('cmd_t_usage'),
         1,
         (p, args) => {
             var module = player.modules.find(x => x.name == args[0]);
-            if (!module) return player.sendMessage("Модуль не найден");
+            if (!module) return player.sendMessage(player.translate('err_module_not_found'));
             if (module.state) {
-                player.sendMessage(`§7[§cВыкл§7] ${module.name}`);
+                player.sendMessage(player.translate('generic_module_state', player.translate('generic_off'), module.name));
                 module.disable();
             } else {
-                player.sendMessage(`§7[§aВкл§7] ${module.name}`);
+                player.sendMessage(player.translate('generic_module_state', player.translate('generic_on'), module.name));
                 module.enable();
             }
         }

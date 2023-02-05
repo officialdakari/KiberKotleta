@@ -23,12 +23,18 @@ export default function chatPlugin(player: Player) {
     });
 
     var translateChatModule = new Module("Translate", "Перевод сообщений в чате", player);
+    if (!player.options.hasModule('Translate')) {
+        player.options.setModuleOptions('Translate', {
+            from: 'auto',
+            to: 'ru'
+        });
+    }
     var translatorSettings = player.options.getModuleOptions("Translate") ?? {
         from: 'auto',
         to: 'ru'
     };
 
-    translateChatModule.on('packet', async (packet: PacketEvent) => {
+    translateChatModule.on('packet', (packet: PacketEvent) => {
         if (packet.name == 'chat_message') {
             console.log(JSON.stringify(packet));
         }
@@ -37,18 +43,15 @@ export default function chatPlugin(player: Player) {
             [1, 0, 7].includes(packet.data.type)) {
             var tc = JSON.parse(packet.data.content);
             console.log(`Original: ${JSON.stringify(packet)}`);
-            const data = await translateTextComponent(tc, translatorSettings.from, translatorSettings.to, []);
-            // EN:all text values become empty after translation here, but perfectly translated in test
-            // RU:весь текст отваливается после перевода, но нормально переводит при тестировании
-            if (!data) return;
-
-            console.log(`Translated: ${JSON.stringify(data)}`);
-            player.sourceClient.write('system_chat', {
-                sender: packet.data.sender ?? '0',
-                type: packet.data.type ?? 1,
-                content: JSON.stringify(data)
-            });
             packet.cancel = true;
+            translateTextComponent(tc, translatorSettings.from, translatorSettings.to, Object.keys(player.targetClient.players)).then(data => {
+                console.log(`Translated: ${JSON.stringify(data)}`);
+                player.sourceClient.write('system_chat', {
+                    sender: packet.data.sender ?? '0',
+                    type: packet.data.type ?? 1,
+                    content: JSON.stringify(data)
+                });
+            });            
         }
     });
 

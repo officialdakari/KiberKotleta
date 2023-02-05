@@ -115,6 +115,22 @@ export class Player extends EventEmitter {
         return true;
     }
 
+    locale() {
+        try {
+            return require(`../locale/${this.options.locale}.json`);
+        } catch (error) {
+            return require(`../../locale/${this.options.locale}.json`);
+        }
+    }
+
+    translate(key, ...args) {
+        var v = this.locale()[key] ?? key;
+        for (const i in args) {
+            v = v.replaceAll(`{${i}}`, args[i]);
+        }
+        return v;
+    }
+
 }
 
 export default function inject(client: ServerClient, host: string, port: number) {
@@ -185,7 +201,7 @@ export default function inject(client: ServerClient, host: string, port: number)
                 return;
             }
             if (target._client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
-                target._client.write(name, data);
+                target._client.write(packetEvent.name, packetEvent.data);
         } catch (error) {
             console.error(error);
             player.sendMessage({
@@ -203,7 +219,7 @@ export default function inject(client: ServerClient, host: string, port: number)
             }
             if (packetEvent.cancel) return;
             if (client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
-                client.write(name, data);
+                client.write(packetEvent.name, packetEvent.data);
         } catch (error) {
             console.error(error);
             player.sendMessage({

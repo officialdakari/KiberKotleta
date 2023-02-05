@@ -24,12 +24,12 @@ export function getBotMining(bot: any) {
 export default function botsPlugin(player: Player) {
     player.commands.push(new Command(
         "connect_bot",
-        "Добавить бота на сервер",
-        "<никнейм>",
+        player.translate('cmd_connect_bot_desc'),
+        player.translate('cmd_connect_bot_usage'),
         1,
         (player: Player, args: string[]) => {
             var nickname: string = args[0];
-            if (!/^[a-zA-Z0-9_]+$/.test(nickname)) return player.sendMessage({ text: PREFIX + 'Этот никнейм не подходит.' });
+            if (!/^[a-zA-Z0-9_]+$/.test(nickname)) return player.sendMessage({ text: PREFIX + player.translate('cmd_connect_bot_invalid_nick') });
             var bot: mineflayer.Bot = mineflayer.createBot({
                 username: nickname,
                 brand: `KiberKotleta Bot`,
@@ -51,8 +51,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "cancel_bot",
-        "Отменить поиск пути",
-        "<никнеймы|*>",
+        player.translate('cmd_cancel_bot_desc'),
+        player.translate('cmd_cancel_bot_usage'),
         1,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -70,8 +70,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "unfight_bot",
-        "Перестать драться",
-        "<никнеймы|*>",
+        player.translate('cmd_unfight_bot_desc'),
+        player.translate('cmd_unfight_bot_usage'),
         1,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -90,8 +90,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "fight_bot",
-        "Драться",
-        "<никнеймы|*> <с кем>",
+        player.translate('cmd_fight_bot_desc'),
+        player.translate('cmd_fight_bot_usage'),
         2,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -104,7 +104,7 @@ export default function botsPlugin(player: Player) {
                     var p = bot.players[who];
                     if (!p.entity) {
                         return player.sendMessage({
-                            text: PREFIX + `${bot.username} не видит его`
+                            text: PREFIX + player.translate('cmd_fight_bot_doesnt_see_warn', bot.username)
                         });
                     }
                     bot.pvp.attackRange = 3;
@@ -117,8 +117,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "equip_bot",
-        "Надеть что-то",
-        "<никнеймы|*> <что> [куда hand|head|torso|legs|feet|off-hand (hand)]",
+        player.translate('cmd_equip_bot_desc'),
+        player.translate('cmd_equip_bot_usage'),
         2,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -126,7 +126,7 @@ export default function botsPlugin(player: Player) {
             var what: string = args[1];
             var where: string = args[2] ?? 'hand';
             if (!['head', 'torso', 'legs', 'feet', 'hand', 'offhand'].includes(where)) return player.sendMessage({
-                text: PREFIX + `${where} это не место куда можно надеть вещь.`
+                text: PREFIX + player.translate('cmd_equip_bot_isnt_right_place', where)
             });
 
             for (const bot of bots) {
@@ -134,7 +134,7 @@ export default function botsPlugin(player: Player) {
                     var i = bot.inventory.items().find(x => x.name == what);
                     if (!i) {
                         return player.sendMessage({
-                            text: PREFIX + `${bot.username} не нашёл эту вещь у себя в инвентаре.`
+                            text: PREFIX + player.translate('cmd_equip_bot_no_such_item', bot.username)
                         });
                     }
                     bot.equip(i, where as mineflayer.EquipmentDestination);
@@ -155,7 +155,7 @@ export default function botsPlugin(player: Player) {
             var what: string = args[1];
             var countStr: string = args[2] ?? '0';
             if (!/^\d+$/.test(countStr)) return player.sendMessage({
-                text: PREFIX + `${countStr} - это не число.`
+                text: PREFIX + player.translate('cmd_toss_bot_nan', countStr)
             });
             var count = Number(countStr);
 
@@ -164,7 +164,7 @@ export default function botsPlugin(player: Player) {
                     var items = bot.inventory.items().filter(x => x.name == what && x.count >= count);
                     if (items.length == 0) {
                         return player.sendMessage({
-                            text: PREFIX + `${bot.username} не нашёл эту вещь у себя в инвентаре.`
+                            text: PREFIX + player.translate('cmd_toss_bot_no_such_item', bot.username)
                         });
                     }
                     for (const i of items) {
@@ -178,8 +178,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "come_bot",
-        "Привести ботов к Вам",
-        "<никнеймы|*>",
+        player.translate('cmd_come_bot_desc'),
+        player.translate('cmd_come_bot_usage'),
         1,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
@@ -198,15 +198,15 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "goto_bot",
-        "Привести ботов куда-то",
-        "<никнеймы|*> <x> <y> <z>",
+        player.translate('cmd_goto_bot_desc'),
+        player.translate('cmd_goto_bot_usage'),
         4,
         (player: Player, args: string[]) => {
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
             var coordsStr = args.slice(1);
             if (coordsStr.find(x => !/^-?\d+/.test(x))) return player.sendMessage({
-                text: PREFIX + `${coordsStr.find(x => !/^-?\d+/.test(x))} - это не цифра.`
+                text: PREFIX + player.translate("cmd_goto_bot_nan", coordsStr.find(x => !/^-?\d+/.test(x)))
             });
 
             for (const bot of bots) {
@@ -230,7 +230,7 @@ export default function botsPlugin(player: Player) {
         } catch (error) {
             console.error(error);
             player.sendMessage({
-                text: PREFIX + "Не удалось порыбачить"
+                text: PREFIX + player.translate('bot_fish_error', bot.username)
             });
         }
         if (bot_fishing == true) {
@@ -247,7 +247,7 @@ export default function botsPlugin(player: Player) {
         });
         if (!block) {
             return player.sendMessage({
-                text: PREFIX + "Больше нет блоков поблизости"
+                text: PREFIX + player.translate('bot_finished_mining', bot.username)
             });
         }
         try {
@@ -259,7 +259,7 @@ export default function botsPlugin(player: Player) {
         } catch (error) {
             console.error(error);
             player.sendMessage({
-                text: PREFIX + "Не удалось копать"
+                text: PREFIX + player.translate('bot_failed_mining', bot.username)
             });
         }
         if (bot_mining[bot.username]) {
@@ -269,8 +269,8 @@ export default function botsPlugin(player: Player) {
 
     player.commands.push(new Command(
         "fish_bot",
-        "Рыбачить",
-        "<никнеймы|*>",
+        player.translate('cmd_fish_bot_desc'),
+        player.translate('cmd_fish_bot_usage'),
         1,
         async (player: Player, args: string[]) => {
             var all = args[0] == '*';

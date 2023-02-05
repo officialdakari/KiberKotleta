@@ -8,4 +8,6 @@ export default interface TextComponent {
     strikethrough?: boolean | never;
     obfuscated?: boolean | never;
     extra?: TextComponent[] | never;
+    clickEvent?: any | never;
+    hoverEvent?: any | never;
 }
