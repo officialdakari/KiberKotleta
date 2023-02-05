@@ -89,7 +89,7 @@ export class Player extends EventEmitter {
         this.modules = [];
     }
 
-    onChatMessage(message: string) {
+    async onChatMessage(message: string) {
         if (message.startsWith(this.options.commandPrefix)) {
             var args = message.split(' ');
             var cmd = args.shift()?.slice(this.options.commandPrefix.length);
@@ -103,7 +103,11 @@ export class Player extends EventEmitter {
                 return false;
             }
             try {
-                command.execute(this, args);
+                if (command.execute.toString().startsWith('async (')) {
+                    await command.execute(this, args);
+                } else {
+                    command.execute(this, args);
+                }
             } catch (error) {
                 console.error(error);
                 this.sendMessage({
@@ -177,7 +181,7 @@ export default function inject(client: ServerClient, host: string, port: number)
         player.sendMessage(player.translate('generic_connection_lost'));
     });
 
-    client.on('packet', (data, { name, state }) => {
+    client.on('packet', async (data, { name, state }) => {
         try {
             var packetEvent = new PacketEvent(name, state, data, 'client');
             player.emit('packet', packetEvent);
@@ -186,7 +190,7 @@ export default function inject(client: ServerClient, host: string, port: number)
             }
             if (packetEvent.cancel) return;
             if (name == 'chat_message') {
-                if (!player.onChatMessage(data.message)) return;
+                if (!(await player.onChatMessage(data.message))) return;
             }
             if (['position', 'position_and_rotate', 'rotate'].includes(name)) {
                 if (!player.manualMovement) return;

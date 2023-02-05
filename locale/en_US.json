@@ -30,7 +30,7 @@
     "cmd_conf_usage": "<moduleName> [key] [json value]",
     "cmd_conf_params_list": "§2{0} §aparameters available: §7{1}",
     "cmd_conf_param_value": "§a'{0}' §7= §f{1}",
-    "cmd_conf_param_updated": "§aValue updated",
+    "cmd_conf_param_update": "§aValue updated",
     "cmd_t_desc": "Toggle module state",
     "cmd_t_usage": "<moduleName>",
     "cmd_connect_bot_desc": "Connect a bot",
@@ -94,5 +94,8 @@
     "cmd_cancelspam_desc": "Cancel spam",
     "cmd_locale_desc": "Change locale",
     "cmd_locale_usage": "<locale file name>",
-    "cmd_locale_changed": "\u00A7aLocale changed to {0}. In order to change locale for everything, please rejoin."
+    "cmd_locale_changed": "\u00A7aLocale changed to {0}. In order to change locale for everything, please rejoin.",
+    "cmd_tr_desc": "Translate message",
+    "cmd_tr_usage": "[message]",
+    "cmd_tr_result": "Translated: {0} | Use .tr to send"
 }

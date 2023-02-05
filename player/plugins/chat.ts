@@ -25,8 +25,10 @@ export default function chatPlugin(player: Player) {
     var translateChatModule = new Module("Translate", player.translate('module_Translate'), player);
     if (!player.options.hasModule('Translate')) {
         player.options.setModuleOptions('Translate', {
-            from: 'auto',
+            from: 'es',
             to: 'ru',
+            from2: 'ru',
+            to2: 'es',
             lingva_host: 'https://translate.jae.fi'
         });
     }
@@ -49,9 +51,31 @@ export default function chatPlugin(player: Player) {
                     type: packet.data.type ?? 1,
                     content: JSON.stringify(data)
                 });
-            });            
+            });
         }
     });
+
+    var a = "";
+
+    player.commands.push(
+        new Command(
+            "tr",
+            player.translate('cmd_tr_desc'),
+            player.translate('cmd_tr_usage'),
+            0,
+            async (p, args: string[]) => {
+                if (args.length > 0) {
+                    var text = args.join(' ');
+                    a = (await translateTextComponent({ text }, translatorSettings.from2, translatorSettings.to2, Object.keys(player.targetClient.players), translatorSettings.lingva_host)).text;
+                    player.sendMessage(player.translate('cmd_tr_result', a));
+                } else {
+                    if (a == '') return;
+                    player.targetClient.chat(a);
+                    a = "";
+                }
+            }
+        )
+    );
 
     player.modules.push(TimestampsModule);
     player.modules.push(translateChatModule);
