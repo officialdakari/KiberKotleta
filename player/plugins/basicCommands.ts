@@ -11,7 +11,7 @@ export default function basicCommandsPlugin(player: Player) {
         () => {
             player.sendMessage(player.translate('kiberkotleta_version_author', VERSION));
             player.sendMessage(player.translate('help_parameter_guide'));
-            player.sendMessage(player.translate('help_commands_count'));
+            player.sendMessage(player.translate('help_commands_count'), player.commands.length);
             for (const command of player.commands) {
                 player.sendMessage(`${command.name}${command.usage.length > 0 ? " " + command.usage : ""} => ${command.description}`);
             }

@@ -25,10 +25,10 @@ export default function chatPlugin(player: Player) {
     var translateChatModule = new Module("Translate", player.translate('module_Translate'), player);
     if (!player.options.hasModule('Translate')) {
         player.options.setModuleOptions('Translate', {
-            from: 'es',
+            from: 'en',
             to: 'ru',
             from2: 'ru',
-            to2: 'es',
+            to2: 'en',
             lingva_host: 'https://translate.jae.fi'
         });
     }

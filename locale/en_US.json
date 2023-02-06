@@ -1,5 +1,6 @@
 {
     "kiberkotleta_version_author": "§aKiberKotleta (CyberCutlet) {0} by DarkCoder15",
+    "locale_warning": "\u00A7cWarning! Translations may be not 100% accurate",
     "help_parameter_guide": "§c<param> = required §7| §6[param] = optional",
     "help_commands_count": "§2{0} §acommands available",
     "generic_on": "§aOn",
@@ -94,8 +95,13 @@
     "cmd_cancelspam_desc": "Cancel spam",
     "cmd_locale_desc": "Change locale",
     "cmd_locale_usage": "<locale file name>",
-    "cmd_locale_changed": "\u00A7aLocale changed to {0}. In order to change locale for everything, please rejoin.",
+    "cmd_locale_changed": "\u00A7aLocale changed to {0}. In order to change locale for everything, please rejoin",
     "cmd_tr_desc": "Translate message",
     "cmd_tr_usage": "[message]",
-    "cmd_tr_result": "Translated: {0} | Use .tr to send"
+    "cmd_tr_result": "Translated: {0} | Use .tr to send",
+    "cmd_find_desc": "Find a block",
+    "cmd_find_usage": "<block_name>",
+    "cmd_find_none": "\u00A7cCouldn't find specified blocks near",
+    "cmd_find_success": "\u00A7aBlock found at {0}, {1}, {2}",
+    "cmd_find_not_a_block": "\u00A7cProvided string isn't a block name"
 }
