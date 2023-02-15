@@ -19,6 +19,7 @@
         "colors": "^1.4.0",
         "discord-rpc": "^4.0.1",
         "input": "^1.0.1",
+        "irc": "^0.5.2",
         "minecraft-data": "^3.18.0",
         "minecraft-protocol": "^1.36.1",
         "mineflayer": "^4.5.1",
