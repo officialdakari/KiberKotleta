@@ -103,5 +103,7 @@
     "cmd_find_usage": "<block_name>",
     "cmd_find_none": "\u00A7cCouldn't find specified blocks near",
     "cmd_find_success": "\u00A7aBlock found at {0}, {1}, {2}",
-    "cmd_find_not_a_block": "\u00A7cProvided string isn't a block name"
+    "cmd_find_not_a_block": "\u00A7cProvided string isn't a block name",
+    "cmd_detach_desc": "Detach client",
+    "attached": "Welcome back! {0} elapsed after detach"
 }
