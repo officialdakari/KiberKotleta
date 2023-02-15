@@ -1,4 +1,5 @@
 import { TextComponent } from "../KiberKotleta";
+import fetch from "node-fetch";
 
 const cache = {};
 
@@ -15,12 +16,12 @@ export function editTextComponent(c: TextComponent, source: string, target: stri
     return c;
 }
 
-export async function translateTextComponent(c: TextComponent, source: string, target: string, playerList: Array<string>): Promise<TextComponent> {
+export async function translateTextComponent(c: TextComponent, source: string, target: string, playerList: Array<string>, lingva: string): Promise<TextComponent> {
     console.log(`Translating: ${JSON.stringify(c)}`);
     if (!c.text && c.extra) {
         let ext = [];
         for (const extra of c.extra) {
-            ext.push(await translateTextComponent(extra, source, target, playerList));
+            ext.push(await translateTextComponent(extra, source, target, playerList, lingva));
         }
         return { text: '', extra: ext, clickEvent: c.clickEvent ?? undefined, hoverEvent: c.hoverEvent ?? undefined };
     }
@@ -32,7 +33,7 @@ export async function translateTextComponent(c: TextComponent, source: string, t
         let ext = [];
         if (c['extra']) {
             for (const extra of c.extra) {
-                ext.push(await translateTextComponent(extra, source, target, playerList));
+                ext.push(await translateTextComponent(extra, source, target, playerList, lingva));
             }
             return { text: c.text, extra: ext };
         }
@@ -40,20 +41,21 @@ export async function translateTextComponent(c: TextComponent, source: string, t
     }
     if (/^[0-9\|\\\/\-\=\+\[\]\{\}\"\'\;\:\,\.]+$/.test(c.text)) return c;
     if (/^\/[a-z0-9A-Z_\-\:]+$/.test(c.text)) return c;
-    const fetch = require('node-fetch');
     try {
         try {
             if (cache[c.text]) {
                 c.text = cache[c.text];
                 console.log('From cache');
             } else {
-                let resp = await fetch(`https://translate.jae.fi/api/v1/${source}/${target}/${encodeURIComponent(c.text)}`, {
+                let resp = await fetch(`${lingva}/api/v1/${source}/${target}/${encodeURIComponent(c.text)}`, {
 
                 });
                 let ctn = await resp.json();
+                let spaceStart = c.text.startsWith(' ');
+                let spaceEnd = c.text.endsWith(' ');
+                if (spaceStart) ctn.translation = ' ' + ctn.translation;
+                if (spaceEnd) ctn.translation += ' '; 
                 cache[c.text] = ctn.translation;
-                console.log(`${c.text} (${source}) -> ${ctn.translation} (${target})`);
-                console.log(JSON.stringify(ctn));
                 c.text = ctn.translation;
             }
         } catch (err) {
@@ -65,7 +67,7 @@ export async function translateTextComponent(c: TextComponent, source: string, t
             else {
                 for (let i = 0; i < c.extra.length; i++) {
                     let extraValue = c.extra[i];
-                    extra.push(await translateTextComponent(extraValue, source, target, playerList));
+                    extra.push(await translateTextComponent(extraValue, source, target, playerList, lingva));
                 }
                 c.extra = extra;
             }
