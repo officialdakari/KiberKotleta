@@ -85,5 +85,5 @@ export async function translateTextComponent(c: TextComponent, source: string, t
     } catch (err) {
         console.error(err);
     }
-    return { text: "Translation Error" };
+    return { text: "Translation error, showing original: ", extra: [c] };
 }
