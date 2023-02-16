@@ -1,7 +1,7 @@
 # KiberKotleta
 [![Gitter](https://badges.gitter.im/DarkCoder15_/KiberKotleta.svg)](https://gitter.im/DarkCoder15_/KiberKotleta?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-![Matrix](https://img.shields.io/matrix/kiberkotleta:m.darkcoder15.tk)
+[![Matrix](https://img.shields.io/matrix/kiberkotleta:m.darkcoder15.tk)](https://matrix.to/#/#kiberkotleta:m.darkcoder15.tk)
 
 KiberKotleta is a proxy for Minecraft, which can perform some actions like flying, adjust speed etc.
 Basically, it is a cheat proxy.
