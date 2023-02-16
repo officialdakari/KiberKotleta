@@ -8,8 +8,30 @@ import getOptions, { Options } from "./Options";
 import { getPlugins, TextComponent, VERSION } from "../KiberKotleta";
 import PacketEvent from "./KiberKotletaPacketEvent";
 import MinecraftData from "minecraft-data";
+import { default as ChatMessage } from 'prismarine-chat';
+const registry = require('prismarine-registry')('1.19');
 
 const detachedPlayers = {};
+
+export function getDetachedPlayer(name: string): Player | never {
+    if (!detachedPlayers[name]) return null;
+    return detachedPlayers[name];
+}
+
+const players = {};
+
+export function getPlayer(name: string): Player | never {
+    if (!players[name]) return null;
+    return players[name];
+}
+
+function sleep(ms) {
+    return new Promise(x => {
+        setTimeout(() => {
+            x(true);
+        }, ms);
+    });
+}
 
 export class PlayerPosition {
     x: number;
@@ -37,30 +59,37 @@ export class Player extends EventEmitter {
     plugins: any[];
 
     detached: boolean = false;
-    detachedSince: Date;
+    detachedSince: number;
     packetBuffer: PacketEvent[] = [];
 
     async detach() {
         this.detached = true;
         detachedPlayers[this.username] = this;
         this.sourceClient.end("Detached");
-        this.detachedSince = new Date();
+        this.detachedSince = Date.now();
     }
 
     async attach(client: ServerClient) {
         this.sourceClient = client;
         //client.write('login', this.loginPacket);
-        this.teleport(
-            this.targetClient.entity.position.x,
-            this.targetClient.entity.position.y,
-            this.targetClient.entity.position.z,
-            0, 0, 0x0
-        );
+        this.manualMovement = false;
         for (const packet of this.packetBuffer) {
+            await sleep(100);
             client.write(packet.name, packet.data);
         }
+        await sleep(100);
+        client.write('position', {
+            x: this.targetClient.entity.position.x,
+            y: this.targetClient.entity.position.y,
+            z: this.targetClient.entity.position.z,
+            yaw: 0,
+            pitch: 0,
+            flags: 0x00
+        });
+        this.manualMovement = true;
+
         this.detached = false;
-        this.sendMessage(this.translate('attached', new Date(new Date().getTime() - this.detachedSince.getTime()).toLocaleTimeString()))
+        this.sendMessage(this.translate('attached', new Date(Date.now() - this.detachedSince).toLocaleTimeString()))
         this.packetBuffer = this.packetBuffer.filter(x => x.name != 'system_chat' && x.name != 'chat_message');
         delete detachedPlayers[this.username];
         client.on('packet', async (data, { name, state }) => {
@@ -103,6 +132,7 @@ export class Player extends EventEmitter {
     options: Options;
 
     loginPacket: any;
+    isLinkedToMatrix: boolean = false;
 
     get username(): string {
         return this.sourceClient.username;
@@ -125,7 +155,7 @@ export class Player extends EventEmitter {
             flags
         };
         if (this.detached) {
-            return this.packetBuffer.push(new PacketEvent('position', null, d, 'server'));
+            return this.packetBuffer.push(new PacketEvent('position', states.PLAY, d, 'server'));
         }
         this.sourceClient.write('position', d);
     }
@@ -137,18 +167,19 @@ export class Player extends EventEmitter {
             text: message
         };
 
+        const data = {
+            content: JSON.stringify({ text: prefix, extra: [message] }),
+            type: 1
+        };
+
         if (this.detached) {
-            this.packetBuffer.push(new PacketEvent('system_chat', null, {
-                content: JSON.stringify({ text: prefix, extra: [message] }),
-                type: 1
-            }, 'server'));
+            this.packetBuffer.push(new PacketEvent('system_chat', null, data, 'server'));
             return;
         } else {
-            this.sourceClient.write('system_chat', {
-                content: JSON.stringify({ text: prefix, extra: [message] }),
-                type: 1
-            });
+            this.sourceClient.write('system_chat', data);
         }
+
+        this.emit('packet', new PacketEvent('system_chat', states.PLAY, data, 'kiberkotleta'));
 
     }
 
@@ -240,6 +271,8 @@ export default function inject(client: ServerClient, host: string, port: number)
 
     const player = new Player(client, target);
 
+    players[client.username] = player;
+
     player.mcData = MinecraftData(client.version);
 
     player.host = host;
@@ -260,7 +293,7 @@ export default function inject(client: ServerClient, host: string, port: number)
     target.once('spawn', () => {
         player.emit('joined');
         setTimeout(() => {
-            player.sendMessage([{ text: `\n` }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#0094ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#5050ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#0094ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#5050ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#0093ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#5051ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#1a7dff" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#5051ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#3567ff" }, { "text": "█", "color": "#4f51ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#ce00f2" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#4e52ff" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#8425ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#c900f4" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#693cff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#c400f6" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#8326ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#be00f9" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#9d10ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#b900fb" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#b400fd" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#d800ed" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#c100f8" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#f600df" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#cd00f2" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#ff00dc" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#da00ec" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#ff00dc" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#e600e6" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#ff00dc" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { text: `\nKiberKotleta ${VERSION}` }], "");
+            //player.sendMessage([{ text: `\n` }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#0094ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#5050ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#0094ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#5050ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#0093ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#5051ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#1a7dff" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#5051ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#3567ff" }, { "text": "█", "color": "#4f51ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#ce00f2" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#4e52ff" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#8425ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#c900f4" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#693cff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#c400f6" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#8326ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#be00f9" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#9d10ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#b900fb" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#b200ff" }, { "text": "█", "color": "#b400fd" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#d800ed" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#c100f8" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#f600df" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#cd00f2" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#ff00dc" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#da00ec" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#ff00dc" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#e600e6" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#404040" }, { "text": "█", "color": "#ff00dc" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "\n█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { "text": "█", "color": "#000000" }, { text: `\nKiberKotleta ${VERSION}` }], "");
             setTimeout(() => {
                 player.sendMessage(player.translate('locale_warning'));
             }, 1000);
@@ -270,6 +303,10 @@ export default function inject(client: ServerClient, host: string, port: number)
     client.on('error', (err) => {
         console.error(err);
         player.sendMessage(player.translate('generic_connection_lost'));
+    });
+
+    client.on('end', () => {
+
     });
 
     client.on('packet', async (data, { name, state }) => {
@@ -307,6 +344,13 @@ export default function inject(client: ServerClient, host: string, port: number)
     });
 
     target._client.on('packet', (data, { name, state }) => {
+        if ([
+            'difficulty', 'teams', 'position', 'map_chunk', 'login', 'declare_commands', 'declare_recipes',
+            'unlock_recipes', 'recipes_unlock', 'player_info', 'window_items', 'chunk_unload', 'unload_chunk'
+        ].includes(name)) {
+            if (name == 'login') player.loginPacket = data;
+            player.packetBuffer.push(new PacketEvent(name, state, data, 'server'));
+        }
         try {
             var packetEvent = new PacketEvent(name, state, data, 'server');
             player.emit('packet', packetEvent);
@@ -314,17 +358,14 @@ export default function inject(client: ServerClient, host: string, port: number)
                 module.emit('packet', packetEvent);
             }
             if (packetEvent.cancel) return;
+            if (name == 'set_compression') {
+                player.sourceClient.compressionThreshold = data.threshold;
+            }
             if (player.sourceClient.state == states.PLAY && state == states.PLAY && name != "keep_alive")
                 player.sourceClient.write(packetEvent.name, packetEvent.data);
-            if ([
-                'difficulty', 'teams', 'map_chunk', 'login', 'map_chunk', 'declare_commands', 'declare_recipes',
-                'unlock_recipes', 'recipes_unlock', 'player_info', 'window_items', 'unload_chink', 'chunk_unload'
-            ].includes(name)) {
-                player.packetBuffer.push(new PacketEvent(name, state, data, 'server'));
-            }
-            if ((name == 'chat_message' || name == 'system_chat') && player.detached) {
-                player.packetBuffer.push(new PacketEvent(name, state, data, 'server'));
-            }
+            //if ((name == 'chat_message' || name == 'system_chat') && player.detached && !player.isLinkedToMatrix) {
+            //    player.packetBuffer.push(new PacketEvent(name, state, data, 'server'));
+            //}
         } catch (error) {
             console.error(error);
             player.sendMessage({

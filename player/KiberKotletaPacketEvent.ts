@@ -5,9 +5,9 @@ export default class PacketEvent {
     state: States;
     data: any;
     cancel: boolean;
-    source: 'server' | 'client';
+    source: 'server' | 'client' | 'kiberkotleta';
 
-    constructor(name: string, state: States, data: any, source: 'server' | 'client') {
+    constructor(name: string, state: States, data: any, source: 'server' | 'client' | 'kiberkotleta') {
         this.name = name;
         this.state = state;
         this.data = data;
