@@ -15,15 +15,16 @@ export function getPlugins() {
 
 export default async function start() {
 
-    console.log("KiberKotleta | Версия: " + VERSION);
+    console.log("KiberKotleta | V" + VERSION);
     console.log("GitHub: https://github.com/DarkCoder15/KiberKotleta");
-    console.log("Gitter: https://gitter.im/DarkCoder15_/KiberKotleta");
+    console.log("Matrix: https://matrix.to/#/#kiberkotleta:m.darkcoder15.tk");
+    console.log("IRC: #kiberkotleta on libera.chat, #kiberkotleta on irc.darkcoder15.tk");
     console.log("");
-    console.log("Сайт - https://darkcoder15.tk/KiberKotleta/");
+    console.log("Website: https://darkcoder15.tk/KiberKotleta/");
 
-    var serverIP: string = getArgument("--server") ?? await text("Введите IP-адрес сервера");
-    var serverPortStr: string = getArgument("--port") ?? await text("Введите порт сервера");
-    if (!/^\d+$/.test(serverPortStr)) return console.error("Порт сервера должен быть целым числом.");
+    var serverIP: string = getArgument("--server") ?? await text("Enter server address");
+    var serverPortStr: string = getArgument("--port") ?? await text("Enter port");
+    if (!/^\d+$/.test(serverPortStr)) return console.error("Port should be numeric");
     var serverPort: number = Number.parseInt(serverPortStr);
 
     const server = createServer({
@@ -35,7 +36,7 @@ export default async function start() {
         port: 25566
     });
 
-    console.log("КиберКотлета приготовилась. Заходите на сервер 127.0.0.1:25566");
+    console.log("Ready. You can join now: 127.0.0.1:25566");
 
     server.on('login', (client) => {
         inject(client, serverIP, serverPort);
