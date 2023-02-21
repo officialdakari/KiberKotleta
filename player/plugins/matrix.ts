@@ -10,10 +10,9 @@ import { default as ChatMessage } from 'prismarine-chat';
 const ansiToHtml = require('ansi-to-html');
 
 const config = {
-    "userId": "@minecraft:m.darkcoder15.tk",
-    "password": null,
-    "token": "syt_bWluZWNyYWZ0_CDrglMMMvSXsBbEPmQdX_211NWe",
-    "baseUrl": "https://m.darkcoder15.tk"
+    "userId": "",
+    "token": "",
+    "baseUrl": ""
 };
 
 const startTime = Date.now();
@@ -26,9 +25,11 @@ const myUserId = config.userId;
 
 var bot: MatrixClient;
 
+
 (async () => {
 
     if (bot) return;
+    if (config.userId == '') return;
 
     bot = matrix.createClient({
         baseUrl: config.baseUrl,
