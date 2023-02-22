@@ -26,18 +26,36 @@ export default function chatPlugin(player: Player) {
     var translateChatModule = new Module("Translate", player.translate('module_Translate'), player);
     if (!player.options.hasModule('Translate')) {
         player.options.setModuleOptions('Translate', {
-            from: 'en',
-            to: 'ru',
-            from2: 'ru',
-            to2: 'en',
+            from: 'auto',
+            to: 'en',
+            from2: 'en',
+            to2: 'es',
+            autodetect: true,
             lingva_host: 'https://translate.jae.fi'
         });
     }
+
     var translatorSettings = player.options.getModuleOptions("Translate");
+    var translateOutcomingMessages = true;
+
+    translateChatModule.on('enabled', async () => {
+        if (translatorSettings.autodetect) {
+            const l = player.minecraftLocale.split('_')[0];
+            translatorSettings.to = l;
+            translatorSettings.from2 = l;
+            player.options.setModuleOptions('Translate', translatorSettings);
+            translateChatModule.sendMessage(player.translate('module_Translate_autodetected', l, '.conf Translate autodetect false'));
+        }
+    });
 
     translateChatModule.on('packet', (packet: PacketEvent) => {
-        if (packet.name == 'chat_message') {
-            console.log(JSON.stringify(packet));
+        if (packet.name == 'chat_message' && packet.source == 'client') {
+            if (translateOutcomingMessages && !packet.data.message.startsWith('/') && !packet.data.message.startsWith(player.options.commandPrefix)) {
+                translateTextComponent({text: packet.data.message}, translatorSettings.from2, translatorSettings.to2, Object.keys(player.targetClient.players), translatorSettings.lingva_host).then(data => {
+                    player.targetClient.chat(data.text);
+                });
+                packet.cancel = true;
+            }
         }
         if (packet.source == 'server' &&
             ['chat_message', 'system_chat'].includes(packet.name) &&
@@ -46,7 +64,6 @@ export default function chatPlugin(player: Player) {
             console.log(`Original: ${JSON.stringify(packet)}`);
             packet.cancel = true;
             translateTextComponent(tc, translatorSettings.from, translatorSettings.to, Object.keys(player.targetClient.players), translatorSettings.lingva_host).then(data => {
-                console.log(`Translated: ${JSON.stringify(data)}`);
                 player.sourceClient.write('system_chat', {
                     sender: packet.data.sender ?? '0',
                     type: packet.data.type ?? 1,
@@ -56,30 +73,25 @@ export default function chatPlugin(player: Player) {
         }
     });
 
-    var a = "";
-
     player.commands.push(
         new Command(
             "tr",
             player.translate('cmd_tr_desc'),
-            player.translate('cmd_tr_usage'),
+            '',
             0,
             async (p, args: string[]) => {
-                if (args.length > 0) {
-                    var text = args.join(' ');
-                    a = (await translateTextComponent({ text }, translatorSettings.from2, translatorSettings.to2, Object.keys(player.targetClient.players), translatorSettings.lingva_host)).text;
-                    player.sendMessage(player.translate('cmd_tr_result', a));
+                translateOutcomingMessages = !translateOutcomingMessages;
+                if (translateOutcomingMessages) {
+                    player.sendMessage(player.translate('cmd_tr_enabled'));
                 } else {
-                    if (a == '') return;
-                    player.targetClient.chat(a);
-                    a = "";
+                    player.sendMessage(player.translate('cmd_tr_disabled'));
                 }
             }
         )
     );
 
-    player.modules.push(TimestampsModule);
     player.modules.push(translateChatModule);
+    player.modules.push(TimestampsModule);
 
     var i: NodeJS.Timer;
     var spammed: number = 0;

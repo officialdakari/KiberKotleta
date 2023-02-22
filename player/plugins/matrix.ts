@@ -3,17 +3,28 @@ import Command from "../Command";
 import { getPlayer, Player } from "../KiberKotletaPlayer";
 import * as matrix from 'matrix-js-sdk';
 import { EventEmitterEvents } from "matrix-js-sdk/lib/models/typed-event-emitter";
-import { EmittedEvents, MatrixCall, MatrixClient, RoomEvent, RoomMemberEvent } from "matrix-js-sdk";
+import { EmittedEvents, MatrixCall, MatrixClient, RoomEvent, RoomMemberEvent, ClientEventHandlerMap } from "matrix-js-sdk";
 import { ControlState } from "mineflayer";
 import PacketEvent from "../KiberKotletaPacketEvent";
 import { default as ChatMessage } from 'prismarine-chat';
+import { existsSync } from 'fs';
 const ansiToHtml = require('ansi-to-html');
 
-const config = {
-    "userId": "",
-    "token": "",
-    "baseUrl": ""
+var configPath = '../../config/matrix.json';
+var config = {
+    userId: '',
+    token: '',
+    baseUrl: ''
 };
+if (!existsSync(configPath)) {
+    configPath = '../' + configPath;
+    if (existsSync(configPath)) {
+        config = require(configPath);
+    }
+} else {
+    config = require(configPath);
+}
+
 
 const startTime = Date.now();
 
@@ -25,11 +36,10 @@ const myUserId = config.userId;
 
 var bot: MatrixClient;
 
-
 (async () => {
 
     if (bot) return;
-    if (config.userId == '') return;
+    if (!config.userId) return console.warn('Running without Matrix bot');
 
     bot = matrix.createClient({
         baseUrl: config.baseUrl,
@@ -39,19 +49,21 @@ var bot: MatrixClient;
 
     await bot.startClient();
 
+    // If you use Visual Studio Code and there is error on "on",
+    // that says "on" function not found in MatrixClient:
+    // Update VS Code.
     bot.on(RoomMemberEvent.Membership, async (event, member) => {
         if (member.membership == 'invite' && member.userId == myUserId) {
             try {
                 await bot.joinRoom(member.roomId);
             } catch (error) {
-
+                console.error(`Failed joining ${member.roomId}: ${error.stack}`);
             }
         }
     });
 
     bot.on(RoomEvent.Timeline, async (event, room, toStartOfTimeline) => {
         if (toStartOfTimeline) return;
-        console.log(`${event.getType()} ${event.getSender()}: ${event.getContent().body ?? ""}`);
         if (event.getType() != 'm.room.message') return;
 
         if (event.localTimestamp < startTime) return;
@@ -131,14 +143,20 @@ export default async function matrixPlugin(player: Player) {
         var m = new ansiToHtml().toHtml(msg.toAnsi().replace(/</g, '&lt;').replace(/>/g, '&gt;'));
         m = m.replace(/<\/span>/g, "</font>");
         m = m.replace(/<span style="color:/g, "<font color=\"");
-        await bot.sendHtmlNotice(userRooms[backlinks[player.username]], m, m);
+        msgs.push(m);
     });
+
+    setInterval(async () => {
+        if (!backlinks[player.username] || !userRooms[backlinks[player.username]] || msgs.length < 1) return;
+        await bot.sendHtmlMessage(userRooms[backlinks[player.username]], msgs.join('\n'), msgs.join('<br>\n'));
+        msgs = [];
+    }, 1000);
 
     player.commands.push(
         new Command(
             'approve',
-            'Approve Matrix link',
-            '<MxID>',
+            player.translate('cmd_approve_desc'),
+            player.translate('cmd_approve_usage'),
             1,
             async ({ }, args: string[]) => {
                 player.isLinkedToMatrix = true;

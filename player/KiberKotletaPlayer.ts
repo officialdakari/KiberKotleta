@@ -74,7 +74,7 @@ export class Player extends EventEmitter {
         //client.write('login', this.loginPacket);
         this.manualMovement = false;
         for (const packet of this.packetBuffer) {
-            await sleep(100);
+            if (packet.name != 'map_chunk') await sleep(100); // Я не знаю, но без sleep это не работает. wtf
             client.write(packet.name, packet.data);
         }
         await sleep(100);
@@ -86,6 +86,7 @@ export class Player extends EventEmitter {
             pitch: 0,
             flags: 0x00
         });
+        await sleep(1000);
         this.manualMovement = true;
 
         this.detached = false;
@@ -141,6 +142,8 @@ export class Player extends EventEmitter {
     get version(): string {
         return this.sourceClient.version;
     }
+
+    minecraftLocale: string;
 
     teleport(x: number, y: number, z: number, yaw?: number, pitch?: number, flags?: number) {
         if (!yaw) yaw = 0;
@@ -280,6 +283,13 @@ export default function inject(client: ServerClient, host: string, port: number)
 
     loadPlugins(player, client, target);
 
+    for (const m of player.options.enabledModules) {
+        const mod = player.modules.find(x => x.name == m);
+        if (mod) {
+            mod.enable();
+        }
+    }
+
     getPlugins().forEach(x => {
         if (typeof x.onPlayer === "function") {
             x.onPlayer(player);
@@ -312,6 +322,10 @@ export default function inject(client: ServerClient, host: string, port: number)
     client.on('packet', async (data, { name, state }) => {
         try {
             if (player.detached) return;
+            if (name == 'settings') {
+                player.minecraftLocale = data.locale;
+                player.emit('minecraft_locale_changed', data.locale);
+            }
             var packetEvent = new PacketEvent(name, state, data, 'client');
             player.emit('packet', packetEvent);
             for (const module of player.modules.filter(x => x.state)) {
@@ -328,11 +342,6 @@ export default function inject(client: ServerClient, host: string, port: number)
                 player.targetClient.entity.position.y = player.position.y;
                 player.targetClient.entity.position.z = player.position.z;
             }
-            if (name == 'kick_disconnect') {
-                player.sendMessage(player.translate('generic_kicked'));
-                player.sendMessage(JSON.parse(data.reason));
-                return;
-            }
             if (target._client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
                 target._client.write(packetEvent.name, packetEvent.data);
         } catch (error) {
@@ -345,10 +354,15 @@ export default function inject(client: ServerClient, host: string, port: number)
 
     target._client.on('packet', (data, { name, state }) => {
         if ([
-            'difficulty', 'teams', 'position', 'map_chunk', 'login', 'declare_commands', 'declare_recipes',
-            'unlock_recipes', 'recipes_unlock', 'player_info', 'window_items', 'chunk_unload', 'unload_chunk'
+            'login', 'difficulty', 'abilities', 'held_item_slot', 'declare_recipes',
+            'tags', 'entity_status', 'unlock_recipes', 'teams', 'position', 'player_info',
+            'update_view_distance', 'simulation_distance', 'spawn_entity', 'spawn_position',
+            'window_items', 'experience', 'declare_commands', 'map_chunk', 'destroy_entity' //, 'custom_payload'
         ].includes(name)) {
-            if (name == 'login') player.loginPacket = data;
+            if (name != 'map_chunk' && name != 'spawn_entity' && name != 'destroy_entity' && name != 'tags'
+                && name != 'teams' && name != 'entity_status') {
+                player.packetBuffer = player.packetBuffer.filter(x => x.name != name);
+            }
             player.packetBuffer.push(new PacketEvent(name, state, data, 'server'));
         }
         try {
@@ -360,6 +374,11 @@ export default function inject(client: ServerClient, host: string, port: number)
             if (packetEvent.cancel) return;
             if (name == 'set_compression') {
                 player.sourceClient.compressionThreshold = data.threshold;
+            }
+            if (name == 'kick_disconnect') {
+                player.sendMessage(player.translate('generic_kicked'));
+                player.sendMessage(JSON.parse(data.reason));
+                return;
             }
             if (player.sourceClient.state == states.PLAY && state == states.PLAY && name != "keep_alive")
                 player.sourceClient.write(packetEvent.name, packetEvent.data);

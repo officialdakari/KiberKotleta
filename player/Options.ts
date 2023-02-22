@@ -5,6 +5,7 @@ export class Options {
     messagePrefix: string;
 
     modules: any;
+    enabledModules: string[];
 
     getModuleOptions(moduleName: string): any | never {
         if (!this.modules[moduleName]) this.setModuleOptions(moduleName);
@@ -39,6 +40,7 @@ export class Options {
         this.locale = "en_US";
         this.messagePrefix = "§8(§2К§cК§8) §r§7";
         this.modules = {};
+        this.enabledModules = [];
     }
 }
 

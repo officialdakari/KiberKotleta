@@ -69,7 +69,12 @@ export default function basicCommandsPlugin(player: Player) {
             } else if (args.length == 2) {
                 player.sendMessage(player.translate('cmd_conf_param_value', args[1], JSON.stringify(module[args[1]])));
             } else {
-                var v = JSON.parse(args.slice(2).join(' '));
+                var v;
+                try {
+                    v = JSON.parse(args.slice(2).join(' '));
+                } catch (error) {
+                    v = args.slice(2).join(' ');
+                }
                 module[args[1]] = v;
                 player.options.save();
                 player.sendMessage(player.translate('cmd_conf_param_update'));

@@ -12,11 +12,15 @@ export default class Module extends EventEmitter {
     enable() {
         this.state = true;
         this.emit("enabled");
+        this.player.options.enabledModules.push(this.name);
+        this.player.options.save();
     }
 
     disable() {
         this.state = false;
         this.emit("disabled");
+        this.player.options.enabledModules = this.player.options.enabledModules.filter(x => x != this.name);
+        this.player.options.save();
     }
 
     sendMessage(message: string | TextComponent | TextComponent[]) {
