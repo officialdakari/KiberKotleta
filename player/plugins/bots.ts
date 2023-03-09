@@ -21,6 +21,8 @@ export function getBotMining(bot: any) {
     return bot_mining[bot.username ?? bot];
 }
 
+const SCRIPTS_FOLDER = '../../bot_scripts';
+
 export default function botsPlugin(player: Player) {
     player.commands.push(new Command(
         "connect_bot",
@@ -62,6 +64,46 @@ export default function botsPlugin(player: Player) {
                 if (all || nicknames.includes(bot.username)) {
                     bot.pathfinder.stop();
                     bot.pathfinder.setGoal(null);
+                }
+            }
+
+        }
+    ));
+
+    player.commands.push(new Command(
+        "script_bot",
+        player.translate('cmd_script_bot_desc'),
+        player.translate('cmd_script_bot_usage'),
+        1,
+        async (player: Player, args: string[]) => {
+            if (args.length < 2) return await player.sendMessage(
+                player.translate(
+                    'err_usage',
+                    'script_bot ' + player.translate('cmd_script_bot_usage')
+                )
+            );
+            var all = args[0] == '*';
+            var nicknames: string[] = args[0].split(',');
+            var fileName = args[1];
+            var params = args.slice(2);
+            var module;
+
+            try {
+                module = require(SCRIPTS_FOLDER + '/' + fileName);
+            } catch (error) {
+                return await player.sendMessage(
+                    player.translate(
+                        'generic_error',
+                        `Failed locating script: ${error.message}`
+                    )
+                );
+            }
+
+            var f = typeof module === 'function' ? module : typeof module['default'] === 'function' ? module['default'] : "";
+
+            for (const bot of bots) {
+                if (all || nicknames.includes(bot.username)) {
+                    f(bot, params);
                 }
             }
 

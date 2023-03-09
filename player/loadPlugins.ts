@@ -56,7 +56,7 @@ export default function loadPlugins(player: Player, client: ServerClient, target
         } else if (typeof plugin === "function") {
             player.loadPlugin(plugin);
         } else {
-            console.error(`Не удалось загрузить плагин: ${pluginPath}`);
+            console.error(`Couldn't load internal plugin: ${pluginPath}`);
         }
     }
     

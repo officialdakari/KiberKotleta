@@ -107,7 +107,7 @@ export class Player extends EventEmitter {
                 if (name == 'chat_message') {
                     if (!(await player.onChatMessage(data.message))) return;
                 }
-                if (['position', 'position_and_rotate', 'rotate'].includes(name)) {
+                if (['position', 'position_look', 'look'].includes(name)) {
                     if (!player.manualMovement) return;
                     player.position = Object.assign(player.position, data);
                     player.targetClient.entity.position.x = player.position.x;
@@ -131,6 +131,8 @@ export class Player extends EventEmitter {
     }
 
     options: Options;
+    yaw: number;
+    pitch: number;
 
     loginPacket: any;
     isLinkedToMatrix: boolean = false;
@@ -335,12 +337,15 @@ export default function inject(client: ServerClient, host: string, port: number)
             if (name == 'chat_message') {
                 if (!(await player.onChatMessage(data.message))) return;
             }
-            if (['position', 'position_and_rotate', 'rotate'].includes(name)) {
+            if (['position', 'position_rotate', 'rotate', 'position_look', 'look'].includes(name)) {
                 if (!player.manualMovement) return;
                 player.position = Object.assign(player.position, data);
                 player.targetClient.entity.position.x = player.position.x;
                 player.targetClient.entity.position.y = player.position.y;
                 player.targetClient.entity.position.z = player.position.z;
+                player.yaw = data.yaw;
+                player.pitch = data.pitch;
+                console.log(`${name} - ${JSON.stringify(data)}`);
             }
             if (target._client.state == states.PLAY && state == states.PLAY && name != "keep_alive")
                 target._client.write(packetEvent.name, packetEvent.data);
