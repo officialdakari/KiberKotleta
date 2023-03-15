@@ -76,12 +76,7 @@ export default function botsPlugin(player: Player) {
         player.translate('cmd_script_bot_usage'),
         1,
         async (player: Player, args: string[]) => {
-            if (args.length < 2) return await player.sendMessage(
-                player.translate(
-                    'err_usage',
-                    'script_bot ' + player.translate('cmd_script_bot_usage')
-                )
-            );
+            if (args.length < 2) return false;
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
             var fileName = args[1];
@@ -135,7 +130,7 @@ export default function botsPlugin(player: Player) {
         player.translate('cmd_fight_bot_desc'),
         player.translate('cmd_fight_bot_usage'),
         2,
-        (player: Player, args: string[]) => {
+        async (player: Player, args: string[]) => {
             var all = args[0] == '*';
             var nicknames: string[] = args[0].split(',');
             var who: string = args[1];
@@ -150,7 +145,7 @@ export default function botsPlugin(player: Player) {
                         });
                     }
                     bot.pvp.attackRange = 3;
-                    bot.pvp.attack(p.entity);
+                    await bot.pvp.attack(p.entity);
                 }
             }
 
